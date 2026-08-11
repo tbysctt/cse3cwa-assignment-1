@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CSE3CWA — Assessment 1: Phoneme Activity Builder
 
-## Getting Started
+Frontend builder for Speech Pathology teachers and students to create phoneme-based **Wordle** and **Word Search** classroom activities, preview them in the browser, and download a single playable `.html` file.
 
-First, run the development server:
+Assessment 1 is **frontend only** (no database or dynamic word lists).
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Purpose |
+| --- | --- |
+| `/` | Home / introduction |
+| `/about` | Project explanation, student details, how-to video |
+| `/wordle` | Phoneme Wordle builder, preview, Generate HTML |
+| `/word-search` | Phoneme Word Search builder, preview, Generate HTML |
+| `/settings` | Light/dark theme and layout density (cookie-persisted) |
 
-## Learn More
+## Generate HTML
 
-To learn more about Next.js, take a look at the following resources:
+On the Wordle or Word Search page, use **Generate HTML** to download a self-contained activity file. Open the downloaded file in any modern browser (including offline / `file://`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Before submission
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Set your student number in [`lib/student.ts`](lib/student.ts).
+2. Add your how-to video as [`public/howto.mp4`](public/howto.mp4) or replace the About page video with an embed.
+3. Record the verbal justification covering design decisions, component structure, usability, accessibility, trade-offs, and Speech Pathology classroom support.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run lint
+npm run build
+npm start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stack
+
+- Next.js (App Router) + React + TypeScript
+- Tailwind CSS v4
+- Cookie-based theme / layout preferences via Server Actions

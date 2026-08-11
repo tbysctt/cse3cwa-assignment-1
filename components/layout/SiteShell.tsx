@@ -3,7 +3,7 @@ import { Header } from "./Header";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>

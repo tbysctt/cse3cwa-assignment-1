@@ -43,7 +43,7 @@ export default async function RootLayout({
       className={`${notoSans.variable} ${notoMono.variable} h-full antialiased ${theme === "dark" ? "dark" : ""}`}
     >
       <body
-        className="min-h-full flex flex-col font-sans"
+        className="flex min-h-dvh flex-col font-sans"
         data-density={density}
         data-theme={theme}
       >

@@ -81,7 +81,7 @@ export function generateWordSearchHtml(
     min-height: 2.75rem; border: 1px solid var(--border); border-radius: 0.35rem;
     background: var(--surface); font-family: ui-monospace, monospace; font-size: 0.9rem;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; position: relative;
+    cursor: pointer; position: relative; touch-action: none;
   }
   .cell .g { font-size: 0.6rem; font-family: system-ui, sans-serif; color: #64748b; }
   .cell.selected {
@@ -143,6 +143,7 @@ export function generateWordSearchHtml(
   const foundCells = new Set();
   let selecting = false;
   let selected = [];
+  let suppressClick = false;
   const gridEl = document.getElementById("grid");
   const listEl = document.getElementById("list");
   const statusEl = document.getElementById("status");
@@ -208,15 +209,20 @@ export function generateWordSearchHtml(
       } else {
         btn.textContent = "/" + cell.ipa + "/";
       }
-      btn.addEventListener("mousedown", (e) => {
+      btn.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
+        suppressClick = true;
         selecting = true;
         selected = [key(r, c)];
         updateSelectionClasses();
       });
-      btn.addEventListener("mouseenter", () => { if (selecting) addCell(r, c); });
+      btn.addEventListener("pointerenter", () => { if (selecting) addCell(r, c); });
       btn.addEventListener("click", () => {
+        if (suppressClick) {
+          suppressClick = false;
+          return;
+        }
         if (!selecting) {
           if (selected.includes(key(r, c))) selected = selected.filter((x) => x !== key(r, c));
           else selected.push(key(r, c));
@@ -228,7 +234,7 @@ export function generateWordSearchHtml(
     }
   }
 
-  document.addEventListener("mouseup", () => { if (selecting) { selecting = false; tryMatch(); } });
+  document.addEventListener("pointerup", () => { if (selecting) { selecting = false; tryMatch(); } });
   document.getElementById("clear").addEventListener("click", () => {
     selected = [];
     updateSelectionClasses();

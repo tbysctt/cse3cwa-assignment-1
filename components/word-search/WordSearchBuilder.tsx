@@ -16,7 +16,12 @@ import { generateWordSearch, type WordSearchPuzzle } from "@/lib/word-search";
 import type { WordSearchRow } from "./PhonemeWordListEditor";
 
 const SEED = 42;
-const GRID_SIZE = 8;
+const REQUIRED_WORD_COUNT = 5;
+const GRID_SIZE_BY_DIFFICULTY: Record<Difficulty, number> = {
+  easy: 8,
+  medium: 9,
+  hard: 10,
+};
 
 export function WordSearchBuilder() {
   const [rows, setRows] = useState<WordSearchRow[]>(() =>
@@ -28,6 +33,7 @@ export function WordSearchBuilder() {
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [showHints, setShowHints] = useState(true);
+  const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
 
   const inventory = useMemo(() => {
     const map = new Map<string, Phoneme>();
@@ -38,16 +44,21 @@ export function WordSearchBuilder() {
     return [...map.values()];
   }, [rows]);
 
+  const completeRows = useMemo(
+    () =>
+      rows.filter((row) => row.phonemes.length > 0 && row.english.trim().length > 0),
+    [rows],
+  );
+
   const validWords = useMemo<PhonemeWord[]>(
     () =>
-      rows
-        .filter((row) => row.phonemes.length > 0)
+      completeRows
         .map((row) => ({
           id: row.id,
-          english: row.english.trim() || "…",
+          english: row.english.trim(),
           phonemes: row.phonemes,
         })),
-    [rows],
+    [completeRows],
   );
 
   const wordsSignature = useMemo(
@@ -59,21 +70,23 @@ export function WordSearchBuilder() {
   );
 
   const puzzle = useMemo<WordSearchPuzzle | null>(() => {
-    if (validWords.length === 0) return null;
+    if (validWords.length !== REQUIRED_WORD_COUNT) return null;
     try {
-      return generateWordSearch(validWords, GRID_SIZE, SEED);
+      return generateWordSearch(validWords, gridSize, SEED);
     } catch {
       return null;
     }
-  }, [validWords]);
+  }, [validWords, gridSize]);
 
-  const missingEnglish = validWords.some((word) => word.english === "…");
   const canGenerate =
-    puzzle !== null && validWords.length >= 1 && !missingEnglish;
+    puzzle !== null && validWords.length === REQUIRED_WORD_COUNT;
 
-  const generateHint = canGenerate
-    ? "Download the word search as a standalone HTML file"
-    : "Give every word a phoneme sequence and an English word first";
+  const generateHint =
+    validWords.length !== REQUIRED_WORD_COUNT
+      ? `Configure all ${REQUIRED_WORD_COUNT} words with phonemes and English labels first`
+      : canGenerate
+        ? "Download the word search as a standalone HTML file"
+        : "Current words do not fit the selected grid size; shorten one or more words";
 
   function handleGenerate() {
     if (!puzzle || !canGenerate) return;
@@ -98,6 +111,7 @@ export function WordSearchBuilder() {
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
           onRowsChange={setRows}
+          configuredCount={validWords.length}
           canGenerate={canGenerate}
           generateHint={generateHint}
           onGenerate={handleGenerate}
@@ -108,7 +122,7 @@ export function WordSearchBuilder() {
           puzzle={puzzle}
           words={validWords}
           showHints={showHints}
-          puzzleKey={`${wordsSignature}|${difficulty}|${GRID_SIZE}`}
+          puzzleKey={`${wordsSignature}|${difficulty}|${gridSize}`}
         />
       }
     />

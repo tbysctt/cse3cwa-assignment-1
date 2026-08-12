@@ -20,6 +20,7 @@ export function WordSearchConfigForm({
   difficulty,
   onDifficultyChange,
   onRowsChange,
+  configuredCount,
   canGenerate,
   generateHint,
   onGenerate,
@@ -31,6 +32,7 @@ export function WordSearchConfigForm({
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
   onRowsChange: (next: WordSearchRow[]) => void;
+  configuredCount: number;
   canGenerate: boolean;
   generateHint?: string;
   onGenerate: () => void;
@@ -38,7 +40,7 @@ export function WordSearchConfigForm({
   return (
     <SectionCard
       title="Configure activity"
-      description="Edit up to five phoneme-based words, hints and difficulty. The grid preview regenerates as you edit."
+      description="Edit the fixed five-word phoneme list, hints and difficulty. The grid preview regenerates as you edit."
     >
       <div className="flex flex-col gap-5">
         <PhonemeWordListEditor
@@ -47,6 +49,9 @@ export function WordSearchConfigForm({
           showHint={showHints}
           onChange={onRowsChange}
         />
+        <p className="text-xs text-absent">
+          Configured words: {configuredCount}/5
+        </p>
 
         <fieldset>
           <legend className="text-sm font-semibold text-foreground">

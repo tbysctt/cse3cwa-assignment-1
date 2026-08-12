@@ -90,13 +90,14 @@ export function WordSearchGame({
           style={{
             gridTemplateColumns: `repeat(${puzzle.size}, minmax(2.3rem, 1fr))`,
           }}
-          onMouseLeave={() => setDragging(false)}
-          onMouseUp={() => {
+          onPointerLeave={() => setDragging(false)}
+          onPointerUp={() => {
             if (dragging) {
               setDragging(false);
               tryMatch(selectedRef.current);
             }
           }}
+          onPointerCancel={() => setDragging(false)}
         >
           {puzzle.grid.map((row, rowIndex) =>
             row.map((cell, colIndex) => {
@@ -118,17 +119,19 @@ export function WordSearchGame({
                       : isSelected
                         ? "border-accent bg-accent/20 shadow-[inset_0_0_0_2px_var(--accent)]"
                         : "border-border bg-background hover:bg-surface-muted",
+                    "touch-none",
                   ].join(" ")}
                   aria-pressed={isSelected || isFound}
                   aria-label={showHints && hint ? hint : phoneme ? formatIpa(phoneme.ipa) : ""}
                   title={showHints && hint ? hint : undefined}
-                  onMouseDown={(event) => {
+                  onPointerDown={(event) => {
+                    if (event.button !== 0) return;
                     event.preventDefault();
                     pointerIntentRef.current = true;
                     setDragging(true);
                     setSelectedKeys([key]);
                   }}
-                  onMouseEnter={() => {
+                  onPointerEnter={() => {
                     if (dragging) addWhileDragging(rowIndex, colIndex);
                   }}
                   onClick={() => {

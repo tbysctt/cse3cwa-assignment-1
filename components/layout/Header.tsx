@@ -1,24 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { student } from "@/lib/student";
 import { MobileMenu } from "./MobileMenu";
 import { allNavLinks } from "./nav-links";
 
 export function Header() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
   const menuId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-
-  if (prevPathname !== pathname) {
-    setPrevPathname(pathname);
-    setOpen(false);
-  }
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +56,7 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="relative">
+        <div className="relative md:hidden">
           <button
             ref={buttonRef}
             type="button"
@@ -89,7 +81,7 @@ export function Header() {
               role="menu"
               className="absolute right-0 z-40 mt-2 w-56"
             >
-              <MobileMenu links={allNavLinks} />
+              <MobileMenu links={allNavLinks} onNavigate={() => setOpen(false)} />
             </div>
           ) : null}
         </div>

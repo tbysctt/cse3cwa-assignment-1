@@ -10,7 +10,13 @@ import {
 
 type NavLink = (typeof allNavLinks)[number];
 
-export function MobileMenu({ links }: { links: readonly NavLink[] }) {
+export function MobileMenu({
+  links,
+  onNavigate,
+}: {
+  links: readonly NavLink[];
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -26,6 +32,7 @@ export function MobileMenu({ links }: { links: readonly NavLink[] }) {
             href={link.href}
             className={linkClass(active)}
             aria-current={active ? "page" : undefined}
+            onClick={onNavigate}
           >
             {link.label}
           </Link>

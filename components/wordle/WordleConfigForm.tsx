@@ -63,7 +63,7 @@ export function WordleConfigForm({
     onDifficultyChange(next);
     const preset = DIFFICULTY_PRESETS[next];
     onMaxAttemptsChange(preset.maxAttempts);
-    if (next === "hard") onShowHintsChange(false);
+    onShowHintsChange(preset.showHints);
   }
 
   return (

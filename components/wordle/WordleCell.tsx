@@ -6,9 +6,11 @@ import type { TileStatus } from "@/lib/wordle";
 export function WordleCell({
   phoneme,
   status,
+  showHint,
 }: {
   phoneme?: Phoneme;
   status?: TileStatus;
+  showHint: boolean;
 }) {
   const label = phoneme
     ? `${formatIpa(phoneme.ipa)}${
@@ -28,9 +30,11 @@ export function WordleCell({
       {phoneme ? (
         <>
           <span aria-hidden="true">{formatIpa(phoneme.ipa)}</span>
-          <span className="mt-0.5 text-[0.65rem] font-sans font-semibold uppercase tracking-wide opacity-90">
-            {phoneme.grapheme}
-          </span>
+          {showHint ? (
+            <span className="mt-0.5 text-[0.65rem] font-sans font-semibold uppercase tracking-wide opacity-90">
+              {phoneme.grapheme}
+            </span>
+          ) : null}
         </>
       ) : (
         <span className="opacity-30" aria-hidden="true">

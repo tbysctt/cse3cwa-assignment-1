@@ -1,7 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { COOKIE_MAX_AGE, THEME_COOKIE, type Theme } from "@/lib/theme";
+import { cookies } from "next/headers";
 
 export async function setTheme(theme: Theme) {
   const store = await cookies();

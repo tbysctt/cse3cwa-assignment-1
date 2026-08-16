@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
 import type { Phoneme } from "@/data/phonemes";
 import { formatIpa, hintLabel } from "@/data/phonemes";
+import { useId, useState } from "react";
 
 type PhonemeGlyphProps = {
   phoneme: Phoneme;
@@ -52,7 +52,7 @@ export function PhonemeGlyph({
       {showHint && open ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-[var(--control-radius)] bg-foreground px-2 py-1 text-center font-sans text-xs font-medium text-background shadow-md"
+          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-(--control-radius) bg-foreground px-2 py-1 text-center font-sans text-xs font-medium text-background shadow-md"
         >
           {phoneme.grapheme} ({phoneme.example})
         </span>
@@ -62,11 +62,11 @@ export function PhonemeGlyph({
 
   const tipHandlers = showHint
     ? {
-        onMouseEnter: () => setOpen(true),
-        onMouseLeave: () => setOpen(false),
-        onFocus: () => setOpen(true),
-        onBlur: () => setOpen(false),
-      }
+      onMouseEnter: () => setOpen(true),
+      onMouseLeave: () => setOpen(false),
+      onFocus: () => setOpen(true),
+      onBlur: () => setOpen(false),
+    }
     : {};
 
   if (as === "button") {

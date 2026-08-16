@@ -1,16 +1,36 @@
 import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type { Difficulty } from "@/lib/activity";
 import { escapeHtml, toJson } from "@/lib/html";
+import {
+  MAX_MAX_ATTEMPTS,
+  MIN_MAX_ATTEMPTS,
+} from "@/lib/wordle";
 
 export type WordleActivitySettings = {
   target: PhonemeWord;
   inventory: Phoneme[];
   maxAttempts: number;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: Difficulty;
   showHints: boolean;
 };
 
 export function generateWordleHtml(options: WordleActivitySettings): string {
   const { target, inventory, maxAttempts, difficulty, showHints } = options;
+  if (!target.english.trim() || target.phonemes.length === 0) {
+    throw new Error("Wordle activities need an English answer and phoneme target.");
+  }
+  if (
+    !Number.isInteger(maxAttempts) ||
+    maxAttempts < MIN_MAX_ATTEMPTS ||
+    maxAttempts > MAX_MAX_ATTEMPTS
+  ) {
+    throw new Error(
+      `Wordle attempts must be an integer from ${MIN_MAX_ATTEMPTS} to ${MAX_MAX_ATTEMPTS}.`,
+    );
+  }
+  if (inventory.length === 0) {
+    throw new Error("Wordle activities need at least one keyboard phoneme.");
+  }
   const title = "PHONEME'LE";
   const length = target.phonemes.length;
 
@@ -172,6 +192,21 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     return result;
   }
 
+  function appendPhonemeContent(container, phoneme, includeHint) {
+    const ipa = document.createElement("span");
+    ipa.textContent = "/" + phoneme.ipa + "/";
+    container.appendChild(ipa);
+    if (!includeHint) return;
+    const grapheme = document.createElement("span");
+    grapheme.className = "g";
+    grapheme.textContent = phoneme.grapheme;
+    container.appendChild(grapheme);
+    const tip = document.createElement("span");
+    tip.className = "tip";
+    tip.textContent = phoneme.grapheme + " (" + phoneme.example + ")";
+    container.appendChild(tip);
+  }
+
   function render() {
     board.innerHTML = "";
     for (let r = 0; r < maxAttempts; r++) {
@@ -180,7 +215,6 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
       for (let c = 0; c < length; c++) {
         const tile = document.createElement("div");
         tile.className = "tile";
-        tile.tabIndex = 0;
         const phoneme = guesses[r][c];
         const status = results[r][c];
         if (status) tile.classList.add(status);
@@ -188,10 +222,8 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
         if (phoneme) {
           if (showHints) {
             tile.title = hint(phoneme);
-            tile.innerHTML = "<span>/" + phoneme.ipa + "/</span><span class='g'>" + phoneme.grapheme + "</span><span class='tip'>" + phoneme.grapheme + " (" + phoneme.example + ")</span>";
-          } else {
-            tile.innerHTML = "<span>/" + phoneme.ipa + "/</span>";
           }
+          appendPhonemeContent(tile, phoneme, showHints);
           const label = "/" + phoneme.ipa + "/" + (status ? " — " + statusLabel(status) : "");
           tile.setAttribute("aria-label", label);
         }
@@ -214,10 +246,10 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     if (showHints) {
       btn.title = hint(p);
       btn.setAttribute("aria-label", hint(p));
-      btn.innerHTML = "<span>/" + p.ipa + "/</span><span class='g'>" + p.grapheme + "</span><span class='tip'>" + p.grapheme + " (" + p.example + ")</span>";
     } else {
-      btn.textContent = "/" + p.ipa + "/";
+      btn.setAttribute("aria-label", "/" + p.ipa + "/");
     }
+    appendPhonemeContent(btn, p, showHints);
     btn.addEventListener("click", () => {
       if (locked || col >= length) return;
       guesses[row][col] = p;

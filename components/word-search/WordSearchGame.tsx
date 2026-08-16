@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Phoneme, PhonemeWord } from "@/data/phonemes";
 import { formatIpa } from "@/data/phonemes";
 import {
@@ -20,11 +20,12 @@ export function WordSearchGame({
   const [selected, setSelected] = useState<string[]>([]);
   const [foundIds, setFoundIds] = useState<Set<string>>(new Set());
   const [foundCells, setFoundCells] = useState<Set<string>>(new Set());
-  const [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState("");
   const selectedRef = useRef<string[]>([]);
   const foundIdsRef = useRef<Set<string>>(new Set());
   const pointerIntentRef = useRef(false);
+  const draggingRef = useRef(false);
+  const selectionBeforePointerRef = useRef<string[]>([]);
 
   function cellKey(row: number, col: number) {
     return `${row}-${col}`;
@@ -73,6 +74,30 @@ export function WordSearchGame({
     setSelectedKeys([...selectedRef.current, key]);
   }
 
+  useEffect(() => {
+    function finishPointerSelection() {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      if (selectedRef.current.length === 1) {
+        const key = selectedRef.current[0];
+        const previous = selectionBeforePointerRef.current;
+        const next = previous.includes(key)
+          ? previous.filter((item) => item !== key)
+          : [...previous, key];
+        setSelectedKeys(next);
+        tryMatch(next);
+      } else {
+        tryMatch(selectedRef.current);
+      }
+    }
+    document.addEventListener("pointerup", finishPointerSelection);
+    document.addEventListener("pointercancel", finishPointerSelection);
+    return () => {
+      document.removeEventListener("pointerup", finishPointerSelection);
+      document.removeEventListener("pointercancel", finishPointerSelection);
+    };
+  });
+
   function reset() {
     setSelectedKeys([]);
     foundIdsRef.current = new Set();
@@ -85,19 +110,13 @@ export function WordSearchGame({
     <div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start">
       <div className="min-w-0">
+        <div className="overflow-x-auto pb-1">
         <div
-          className="grid gap-2"
+          className="grid gap-1.5"
           style={{
-            gridTemplateColumns: `repeat(${puzzle.size}, minmax(2.3rem, 1fr))`,
+            gridTemplateColumns: `repeat(${puzzle.size}, minmax(2rem, 1fr))`,
+            minWidth: `${puzzle.size * 2.5}rem`,
           }}
-          onPointerLeave={() => setDragging(false)}
-          onPointerUp={() => {
-            if (dragging) {
-              setDragging(false);
-              tryMatch(selectedRef.current);
-            }
-          }}
-          onPointerCancel={() => setDragging(false)}
         >
           {puzzle.grid.map((row, rowIndex) =>
             row.map((cell, colIndex) => {
@@ -121,18 +140,28 @@ export function WordSearchGame({
                         : "border-border bg-background hover:bg-surface-muted",
                     "touch-none",
                   ].join(" ")}
-                  aria-pressed={isSelected || isFound}
-                  aria-label={showHints && hint ? hint : phoneme ? formatIpa(phoneme.ipa) : ""}
+                  aria-pressed={isSelected}
+                  aria-label={[
+                    showHints && hint
+                      ? hint
+                      : phoneme
+                        ? formatIpa(phoneme.ipa)
+                        : "",
+                    isFound ? "found" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                   title={showHints && hint ? hint : undefined}
                   onPointerDown={(event) => {
                     if (event.button !== 0) return;
                     event.preventDefault();
                     pointerIntentRef.current = true;
-                    setDragging(true);
+                    draggingRef.current = true;
+                    selectionBeforePointerRef.current = selectedRef.current;
                     setSelectedKeys([key]);
                   }}
                   onPointerEnter={() => {
-                    if (dragging) addWhileDragging(rowIndex, colIndex);
+                    if (draggingRef.current) addWhileDragging(rowIndex, colIndex);
                   }}
                   onClick={() => {
                     if (pointerIntentRef.current) {
@@ -145,9 +174,11 @@ export function WordSearchGame({
                   <span aria-hidden="true">
                     {phoneme ? formatIpa(phoneme.ipa) : ""}
                   </span>
-                  <span className="text-[0.6rem] font-sans font-semibold uppercase tracking-wide text-absent">
-                    {phoneme?.grapheme}
-                  </span>
+                  {showHints ? (
+                    <span className="text-[0.65rem] font-sans font-semibold uppercase tracking-wide text-absent">
+                      {phoneme?.grapheme}
+                    </span>
+                  ) : null}
                   {isFound ? (
                     <span
                       aria-hidden="true"
@@ -160,6 +191,7 @@ export function WordSearchGame({
               );
             }),
           )}
+        </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <button

@@ -1,8 +1,9 @@
 "use client";
 
 import type { Phoneme } from "@/data/phonemes";
-import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/wordle";
+import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/activity";
 import { Field } from "@/components/shared/Field";
+import { HintToggle } from "@/components/shared/HintToggle";
 import { SectionCard } from "@/components/shared/SectionCard";
 import {
   PhonemeWordListEditor,
@@ -53,39 +54,16 @@ export function WordSearchConfigForm({
           Configured words: {configuredCount}/5
         </p>
 
-        <fieldset>
-          <legend className="text-sm font-semibold text-foreground">
-            Show phoneme hints
-          </legend>
-          <p className="mt-0.5 text-xs text-absent">
-            When on, grid cells and word chips show tooltips such as /θ/ → TH
-            (as in thin).
-          </p>
-          <div className="mt-2 flex gap-4" role="radiogroup" aria-label="Show phoneme hints">
-            {[
-              { value: true, label: "Yes" },
-              { value: false, label: "No" },
-            ].map((option) => (
-              <label
-                key={option.label}
-                className="flex cursor-pointer items-center gap-2 text-sm font-medium"
-              >
-                <input
-                  type="radio"
-                  name="word-search-show-hints"
-                  className="size-4 accent-[var(--accent)]"
-                  checked={showHints === option.value}
-                  onChange={() => onShowHintsChange(option.value)}
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <HintToggle
+          value={showHints}
+          onChange={onShowHintsChange}
+          name="word-search-show-hints"
+          description="When on, grid cells and word chips show tooltips such as /θ/ → TH (as in thin)."
+        />
 
         <Field
           label="Difficulty"
-          hint="Recorded in the downloaded activity settings."
+          hint="Controls the grid size: easier activities use a smaller grid."
         >
           {(id) => (
             <select

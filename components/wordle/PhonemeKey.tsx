@@ -16,7 +16,7 @@ export function PhonemeKey({
     <PhonemeGlyph
       as="button"
       phoneme={phoneme}
-      showGrapheme
+      showGrapheme={showHint}
       showHint={showHint}
       disabled={disabled}
       onClick={onPress}

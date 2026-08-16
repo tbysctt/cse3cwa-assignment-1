@@ -13,11 +13,13 @@ export function WordleGrid({
   length,
   submitted,
   current,
+  showHint,
 }: {
   maxAttempts: number;
   length: number;
   submitted: SubmittedWordleRow[];
   current: Phoneme[];
+  showHint: boolean;
 }) {
   const columns = `repeat(${length}, minmax(0, 1fr))`;
 
@@ -55,7 +57,12 @@ export function WordleGrid({
       className="flex flex-col gap-2"
     >
       {rows.map((row, index) => (
-        <WordleRow key={index} row={row} columns={columns} />
+        <WordleRow
+          key={index}
+          row={row}
+          columns={columns}
+          showHint={showHint}
+        />
       ))}
     </div>
   );

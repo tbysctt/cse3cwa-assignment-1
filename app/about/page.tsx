@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { student } from "@/lib/student";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About",
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-[var(--section-gap)]">
+    <div className="mx-auto flex max-w-3xl flex-col gap-(--section-gap)">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">About</h1>
         <p className="mt-2 text-absent">
@@ -61,7 +61,7 @@ export default function AboutPage() {
           </code>{" "}
           or replace this element with a video embed.
         </p>
-        <div className="mt-4 aspect-video overflow-hidden rounded-[var(--control-radius)] border border-border bg-surface-muted">
+        <div className="mt-4 aspect-video overflow-hidden rounded-(--control-radius) border border-border bg-surface-muted">
           <video
             className="h-full w-full"
             controls

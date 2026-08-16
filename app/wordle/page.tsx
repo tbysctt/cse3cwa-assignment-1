@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { WordleBuilder } from "@/components/wordle/WordleBuilder";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Wordle",
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function WordlePage() {
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-(--section-gap)">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Phoneme Wordle</h1>
         <p className="mt-2 max-w-2xl text-absent">

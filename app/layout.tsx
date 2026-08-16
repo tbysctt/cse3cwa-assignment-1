@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { Noto_Sans, Noto_Sans_Mono } from "next/font/google";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { ThemeApplier } from "@/components/theme/ThemeApplier";
 import { student } from "@/lib/student";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
+import type { Metadata } from "next";
+import { Noto_Sans, Noto_Sans_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 
 const notoSans = Noto_Sans({

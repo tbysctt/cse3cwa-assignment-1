@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { WordSearchBuilder } from "@/components/word-search/WordSearchBuilder";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Word Search",
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function WordSearchPage() {
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-(--section-gap)">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">
           Phoneme Word Search

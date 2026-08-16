@@ -4,24 +4,26 @@ import { useMemo, useState } from "react";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { WordSearchActivityPreview } from "@/components/word-search/WordSearchActivityPreview";
 import { WordSearchConfigForm } from "@/components/word-search/WordSearchConfigForm";
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type { PhonemeWord } from "@/data/phonemes";
 import {
   PHONEME_INVENTORY,
   WORD_SEARCH_WORDS,
 } from "@/data/phonemes";
 import { downloadTextFile } from "@/lib/download";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
-import type { Difficulty } from "@/lib/wordle";
-import { generateWordSearch, type WordSearchPuzzle } from "@/lib/word-search";
+import {
+  activitySignature,
+  uniquePhonemes,
+  type Difficulty,
+} from "@/lib/activity";
+import {
+  DEFAULT_WORD_SEARCH_SEED,
+  generateWordSearch,
+  GRID_SIZE_BY_DIFFICULTY,
+  REQUIRED_WORD_COUNT,
+  type WordSearchPuzzle,
+} from "@/lib/word-search";
 import type { WordSearchRow } from "./PhonemeWordListEditor";
-
-const SEED = 42;
-const REQUIRED_WORD_COUNT = 5;
-const GRID_SIZE_BY_DIFFICULTY: Record<Difficulty, number> = {
-  easy: 8,
-  medium: 9,
-  hard: 10,
-};
 
 export function WordSearchBuilder() {
   const [rows, setRows] = useState<WordSearchRow[]>(() =>
@@ -36,12 +38,10 @@ export function WordSearchBuilder() {
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
 
   const inventory = useMemo(() => {
-    const map = new Map<string, Phoneme>();
-    for (const p of PHONEME_INVENTORY) map.set(p.ipa, p);
-    for (const row of rows) {
-      for (const p of row.phonemes) map.set(p.ipa, p);
-    }
-    return [...map.values()];
+    return uniquePhonemes(
+      PHONEME_INVENTORY,
+      rows.flatMap((row) => row.phonemes),
+    );
   }, [rows]);
 
   const completeRows = useMemo(
@@ -61,22 +61,35 @@ export function WordSearchBuilder() {
     [completeRows],
   );
 
-  const wordsSignature = useMemo(
-    () =>
-      validWords
-        .map((w) => `${w.id}:${w.phonemes.map((p) => p.ipa).join("")}`)
-        .join("|"),
-    [validWords],
-  );
+  const wordsSignature = useMemo(() => activitySignature(validWords), [validWords]);
 
-  const puzzle = useMemo<WordSearchPuzzle | null>(() => {
-    if (validWords.length !== REQUIRED_WORD_COUNT) return null;
+  const puzzleResult = useMemo<{
+    puzzle: WordSearchPuzzle | null;
+    error: string | null;
+  }>(() => {
+    if (validWords.length !== REQUIRED_WORD_COUNT) {
+      return { puzzle: null, error: null };
+    }
     try {
-      return generateWordSearch(validWords, gridSize, SEED);
-    } catch {
-      return null;
+      return {
+        puzzle: generateWordSearch(
+          validWords,
+          gridSize,
+          DEFAULT_WORD_SEARCH_SEED,
+        ),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        puzzle: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "The word search could not be generated.",
+      };
     }
   }, [validWords, gridSize]);
+  const { puzzle } = puzzleResult;
 
   const canGenerate =
     puzzle !== null && validWords.length === REQUIRED_WORD_COUNT;
@@ -93,7 +106,7 @@ export function WordSearchBuilder() {
     const html = generateWordSearchHtml({
       words: validWords,
       puzzle,
-      seed: SEED,
+      seed: DEFAULT_WORD_SEARCH_SEED,
       difficulty,
       showHints,
     });
@@ -123,6 +136,7 @@ export function WordSearchBuilder() {
           words={validWords}
           showHints={showHints}
           puzzleKey={`${wordsSignature}|${difficulty}|${gridSize}`}
+          errorMessage={puzzleResult.error}
         />
       }
     />

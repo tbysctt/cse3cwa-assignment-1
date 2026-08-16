@@ -114,6 +114,7 @@ export function WordleGame({
             length={length}
             submitted={submitted}
             current={current}
+            showHint={showHints}
           />
         </div>
 

@@ -45,7 +45,7 @@ export function Header() {
 
   return (
     <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <h1 className="block truncate text-xl font-semibold text-foreground sm:text-xl">{student.assessmentTitle}</h1>
         <div className="relative md:hidden">
           <button

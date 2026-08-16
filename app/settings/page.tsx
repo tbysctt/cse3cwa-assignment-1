@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { ThemeControls } from "@/components/settings/ThemeControls";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Settings",

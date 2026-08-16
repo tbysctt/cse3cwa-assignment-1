@@ -1,14 +1,18 @@
 import type { PhonemeWord } from "@/data/phonemes";
+import type { Difficulty } from "@/lib/activity";
 import { escapeHtml, toJson } from "@/lib/html";
 import {
   cellsForPlacement,
+  DEFAULT_WORD_SEARCH_SEED,
   generateWordSearch,
+  GRID_SIZE_BY_DIFFICULTY,
+  validateWordSearchPuzzle,
   type WordSearchPuzzle,
 } from "@/lib/word-search";
 
 export type WordSearchActivitySettings = {
   words: PhonemeWord[];
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: Difficulty;
   showHints: boolean;
   puzzle?: WordSearchPuzzle;
   seed?: number;
@@ -19,7 +23,13 @@ export function generateWordSearchHtml(
 ): string {
   const { words, difficulty, showHints } = options;
   const puzzle =
-    options.puzzle ?? generateWordSearch(words, 8, options.seed ?? 42);
+    options.puzzle ??
+    generateWordSearch(
+      words,
+      GRID_SIZE_BY_DIFFICULTY[difficulty],
+      options.seed ?? DEFAULT_WORD_SEARCH_SEED,
+    );
+  validateWordSearchPuzzle(puzzle, words);
   const title = "PHONEME WORD SEARCH";
 
   const wordsJson = toJson(
@@ -70,9 +80,11 @@ export function generateWordSearchHtml(
   .settings span { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 0.2rem 0.6rem; }
   .layout { display: grid; gap: 1.5rem; }
   @media (min-width: 768px) { .layout { grid-template-columns: 1fr 15rem; } }
+  .grid-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
   .grid {
     display: grid; gap: 0.25rem;
-    grid-template-columns: repeat(${puzzle.size}, minmax(2.25rem, 1fr));
+    grid-template-columns: repeat(${puzzle.size}, minmax(2rem, 1fr));
+    min-width: ${puzzle.size * 2.4}rem;
     user-select: none;
   }
   .cell {
@@ -114,15 +126,18 @@ export function generateWordSearchHtml(
 <body>
 <main>
   <h1>${escapeHtml(title)}</h1>
-  <p class="meta">Select connected phoneme cells (tap or drag) that match a word in the list. Hover or focus a cell for letter hints.</p>
+  <p class="meta">Select a straight line of connected phoneme cells (tap or drag) that matches a word in the list. Hover or focus a cell for letter hints.</p>
   <div class="settings" aria-label="Activity settings">
     <span>Difficulty: ${escapeHtml(difficulty)}</span>
     <span>${words.length} words</span>
   </div>
   <div class="layout">
     <div>
-      <div id="grid" class="grid" aria-label="Phoneme word search grid"></div>
-      <div class="actions"><button type="button" id="clear">Clear selection</button></div>
+      <div class="grid-wrap"><div id="grid" class="grid" aria-label="Phoneme word search grid"></div></div>
+      <div class="actions">
+        <button type="button" id="clear">Clear selection</button>
+        <button type="button" id="reset">Reset activity</button>
+      </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </div>
     <div>
@@ -141,6 +156,7 @@ export function generateWordSearchHtml(
   const foundCells = new Set();
   let selecting = false;
   let selected = [];
+  let selectionBeforePointer = [];
   let suppressClick = false;
   const gridEl = document.getElementById("grid");
   const listEl = document.getElementById("list");
@@ -148,13 +164,34 @@ export function generateWordSearchHtml(
 
   function key(r, c) { return r + "-" + c; }
 
+  function appendPhonemeContent(container, phoneme, includeHint) {
+    const ipa = document.createElement("span");
+    ipa.textContent = "/" + phoneme.ipa + "/";
+    container.appendChild(ipa);
+    if (!includeHint) return;
+    const grapheme = document.createElement("span");
+    grapheme.className = "g";
+    grapheme.textContent = phoneme.grapheme;
+    container.appendChild(grapheme);
+    const tip = document.createElement("span");
+    tip.className = "tip";
+    tip.textContent = phoneme.grapheme + " (" + phoneme.example + ")";
+    container.appendChild(tip);
+  }
+
   function renderList() {
     listEl.innerHTML = "";
     words.forEach((w) => {
       const li = document.createElement("li");
       if (found.has(w.id)) li.classList.add("done");
       if (showHints) li.title = w.hint;
-      li.innerHTML = "<div>" + w.display + "</div><div class='eng'>English: " + w.english + "</div>";
+      const display = document.createElement("div");
+      display.textContent = w.display;
+      li.appendChild(display);
+      const english = document.createElement("div");
+      english.className = "eng";
+      english.textContent = "English: " + w.english;
+      li.appendChild(english);
       listEl.appendChild(li);
     });
   }
@@ -168,10 +205,12 @@ export function generateWordSearchHtml(
   }
 
   function tryMatch() {
-    const set = new Set(selected);
+    if (!isStraightContiguous(selected)) return;
     for (const w of words) {
       if (found.has(w.id)) continue;
-      if (w.cells.length === set.size && w.cells.every((c) => set.has(c))) {
+      const forward = w.cells.every((c, index) => selected[index] === c);
+      const reverse = w.cells.every((c, index) => selected[w.cells.length - index - 1] === c);
+      if (w.cells.length === selected.length && (forward || reverse)) {
         found.add(w.id);
         w.cells.forEach((c) => foundCells.add(c));
         selected = [];
@@ -184,6 +223,24 @@ export function generateWordSearchHtml(
         return;
       }
     }
+  }
+
+  function isStraightContiguous(keys) {
+    if (keys.length === 0 || new Set(keys).size !== keys.length) return false;
+    const points = keys.map((value) => {
+      const match = /^(\\d+)-(\\d+)$/.exec(value);
+      return match ? [Number(match[1]), Number(match[2])] : null;
+    });
+    if (points.some((point) => point === null)) return false;
+    if (points.length === 1) return true;
+    const rowStep = points[1][0] - points[0][0];
+    const colStep = points[1][1] - points[0][1];
+    const unit = (Math.abs(rowStep) === 1 && colStep === 0) ||
+      (Math.abs(colStep) === 1 && rowStep === 0);
+    return unit && points.every((point, index) =>
+      point[0] === points[0][0] + rowStep * index &&
+      point[1] === points[0][1] + colStep * index
+    );
   }
 
   function addCell(r, c) {
@@ -203,15 +260,16 @@ export function generateWordSearchHtml(
       if (showHints) {
         btn.title = hintText;
         btn.setAttribute("aria-label", hintText);
-        btn.innerHTML = "<span>/" + cell.ipa + "/</span><span class='g'>" + cell.grapheme + "</span><span class='tip'>" + cell.grapheme + " (" + cell.example + ")</span>";
       } else {
-        btn.textContent = "/" + cell.ipa + "/";
+        btn.setAttribute("aria-label", "/" + cell.ipa + "/");
       }
+      appendPhonemeContent(btn, cell, showHints);
       btn.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
         suppressClick = true;
         selecting = true;
+        selectionBeforePointer = selected.slice();
         selected = [key(r, c)];
         updateSelectionClasses();
       });
@@ -232,11 +290,30 @@ export function generateWordSearchHtml(
     }
   }
 
-  document.addEventListener("pointerup", () => { if (selecting) { selecting = false; tryMatch(); } });
+  document.addEventListener("pointerup", () => {
+    if (!selecting) return;
+    selecting = false;
+    if (selected.length === 1) {
+      const selectedKey = selected[0];
+      selected = selectionBeforePointer.includes(selectedKey)
+        ? selectionBeforePointer.filter((value) => value !== selectedKey)
+        : selectionBeforePointer.concat(selectedKey);
+      updateSelectionClasses();
+    }
+    tryMatch();
+  });
   document.getElementById("clear").addEventListener("click", () => {
     selected = [];
     updateSelectionClasses();
     statusEl.textContent = "";
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    found.clear();
+    foundCells.clear();
+    selected = [];
+    statusEl.textContent = "";
+    renderList();
+    updateSelectionClasses();
   });
 
   renderList();

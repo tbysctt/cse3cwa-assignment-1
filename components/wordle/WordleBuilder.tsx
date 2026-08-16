@@ -5,8 +5,9 @@ import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { WordleActivityPreview } from "@/components/wordle/WordleActivityPreview";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
 import { PHONEME_INVENTORY, WORDLE_TARGET, type Phoneme } from "@/data/phonemes";
+import { uniquePhonemes, type Difficulty } from "@/lib/activity";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
-import { DEFAULT_MAX_ATTEMPTS, type Difficulty } from "@/lib/wordle";
+import { DEFAULT_MAX_ATTEMPTS } from "@/lib/wordle";
 import { downloadTextFile } from "@/lib/download";
 
 export function WordleBuilder() {
@@ -17,17 +18,13 @@ export function WordleBuilder() {
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
   const inventory = useMemo(() => {
-    const map = new Map<string, Phoneme>();
-    for (const p of [...PHONEME_INVENTORY, ...target]) {
-      map.set(p.ipa, p);
-    }
-    return [...map.values()];
+    return uniquePhonemes(PHONEME_INVENTORY, target);
   }, [target]);
 
   const targetWord = useMemo(
     () => ({
       id: "custom",
-      english: english.trim() || "thin",
+      english: english.trim(),
       phonemes: target,
     }),
     [target, english],

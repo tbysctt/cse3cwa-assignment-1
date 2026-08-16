@@ -1,8 +1,8 @@
 "use client";
 
-import { useId } from "react";
 import type { Phoneme } from "@/data/phonemes";
 import { formatIpa, hintLabel } from "@/data/phonemes";
+import { useId } from "react";
 
 /**
  * Picker for composing a phoneme sequence from the shared inventory. Used for
@@ -95,7 +95,7 @@ export function PhonemePicker({
               type="button"
               disabled={atLimit}
               className={[
-                "inline-flex min-h-11 min-w-11 flex-col items-center justify-center rounded-[var(--control-radius)] border px-2 font-mono text-base transition-colors disabled:opacity-40",
+                "inline-flex min-h-11 min-w-11 flex-col items-center justify-center rounded-(--control-radius) border px-2 font-mono text-base transition-colors disabled:opacity-40",
                 used
                   ? "border-accent bg-accent/10 text-accent"
                   : "border-border bg-surface hover:bg-surface-muted",

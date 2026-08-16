@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { PhonemePicker } from "@/components/phoneme/PhonemePicker";
 import { Field } from "@/components/shared/Field";
+import { HintToggle } from "@/components/shared/HintToggle";
 import { SectionCard } from "@/components/shared/SectionCard";
 import type { Phoneme } from "@/data/phonemes";
 import {
-  clampMaxAttempts,
   DIFFICULTY_OPTIONS,
-  DIFFICULTY_PRESETS,
   type Difficulty,
+} from "@/lib/activity";
+import {
+  clampMaxAttempts,
+  DIFFICULTY_PRESETS,
 } from "@/lib/wordle";
 
 const inputClass =
@@ -45,10 +48,10 @@ export function WordleConfigForm({
   onGenerate: () => void;
 }) {
   const [attemptsDraft, setAttemptsDraft] = useState(String(maxAttempts));
-  const [prevMaxAttempts, setPrevMaxAttempts] = useState(maxAttempts);
+  const [previousMaxAttempts, setPreviousMaxAttempts] = useState(maxAttempts);
 
-  if (prevMaxAttempts !== maxAttempts) {
-    setPrevMaxAttempts(maxAttempts);
+  if (previousMaxAttempts !== maxAttempts) {
+    setPreviousMaxAttempts(maxAttempts);
     setAttemptsDraft(String(maxAttempts));
   }
 
@@ -107,39 +110,12 @@ export function WordleConfigForm({
           )}
         </Field>
 
-        <fieldset>
-          <legend className="text-sm font-semibold text-foreground">
-            Show phoneme hints
-          </legend>
-          <p className="mt-0.5 text-xs text-absent">
-            When on, phoneme buttons show tooltips such as /θ/ → TH (as in thin)
-            on hover or keyboard focus.
-          </p>
-          <div
-            className="mt-2 flex gap-4"
-            role="radiogroup"
-            aria-label="Show phoneme hints"
-          >
-            {[
-              { value: true, label: "Yes" },
-              { value: false, label: "No" },
-            ].map((option) => (
-              <label
-                key={option.label}
-                className="flex cursor-pointer items-center gap-2 text-sm font-medium"
-              >
-                <input
-                  type="radio"
-                  name="show-hints"
-                  className="size-4 accent-[var(--accent)]"
-                  checked={showHints === option.value}
-                  onChange={() => onShowHintsChange(option.value)}
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <HintToggle
+          value={showHints}
+          onChange={onShowHintsChange}
+          name="show-hints"
+          description="When on, phoneme buttons show tooltips such as /θ/ → TH (as in thin) on hover or keyboard focus."
+        />
 
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
@@ -152,6 +128,7 @@ export function WordleConfigForm({
                 className={inputClass}
                 type="number"
                 min={1}
+                max={10}
                 step={1}
                 value={attemptsDraft}
                 onChange={(event) => setAttemptsDraft(event.target.value)}

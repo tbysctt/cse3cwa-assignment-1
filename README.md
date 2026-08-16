@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CSE3CWA Assessment: Phoneme Activity Builder
 
-## Getting Started
+This is a three-part assignment:
+1. Frontend design and usability
+2. Full-stack cloud application implementation
+3. The third stage extends the same project into a data-driven web application and reporting stage. The aim is to demonstrate that the Wordle and Word Search builder can store, process, monitor, and present data in a meaningful operational format.
 
-First, run the development server:
+The app itself is a phoneme acitivity builder, designed for teachers who want to prepare activities for Speech Pathology students. Teachers can configure settings, preview student gameplay, and download a **single self-contained `.html`** file for browser use.
 
-```bash
+## Tech stack
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS 4
+
+## Accessibility and usability highlights
+
+- Keyboard-navigable controls and action buttons
+- Visible focus states and skip link
+- Hint tooltips with phoneme-to-grapheme mapping (e.g. `/θ/ → TH (as in thin)`)
+- Color + pattern feedback for Wordle status clarity
+- Responsive layout across compact and wide screens
+
+## Local development
+
+```sh
+# Install NPM dependencies
+npm install
+
+# Run the development server, available at localhost:3000
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Run ESLint
+npm run lint
+
+# Build the app for production
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## About page video
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Place your walkthrough at:
+- `public/howto.mp4`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The About page will render it automatically in the embedded player.

@@ -1,0 +1,282 @@
+import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import { escapeHtml, toJson } from "@/lib/html";
+
+export type WordleActivitySettings = {
+  target: PhonemeWord;
+  inventory: Phoneme[];
+  maxAttempts: number;
+  difficulty: "easy" | "medium" | "hard";
+  showHints: boolean;
+};
+
+export function generateWordleHtml(options: WordleActivitySettings): string {
+  const { target, inventory, maxAttempts, difficulty, showHints } = options;
+  const title = "PHONEME'LE";
+  const length = target.phonemes.length;
+
+  const dataJson = toJson({
+    english: target.english,
+    target: target.phonemes,
+    inventory,
+    maxAttempts,
+    length,
+    showHints,
+    difficulty,
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${escapeHtml(title)}</title>
+<style>
+  :root {
+    --bg: #f4f7f8; --fg: #1a2b32; --surface: #fff; --border: #c5d2d7;
+    --accent: #0f766e; --correct: #15803d; --present: #a16207; --absent: #64748b;
+    --correct-ink: #ffffff; --present-ink: #ffffff; --absent-ink: #eef2f4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Noto Sans", system-ui, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.5;
+  }
+  main { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.5rem; letter-spacing: 0.04em; margin: 0 0 0.5rem; }
+  .meta { color: #64748b; font-size: 0.95rem; margin-bottom: 1.25rem; }
+  .settings {
+    display: inline-flex; flex-wrap: wrap; gap: 0.4rem 0.9rem;
+    margin-bottom: 1.25rem; font-size: 0.85rem; color: #64748b;
+  }
+  .settings span { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 0.2rem 0.6rem; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;
+    font-size: 0.8rem; color: #64748b;
+  }
+  .legend .swatch { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .legend .dot {
+    width: 0.85rem; height: 0.85rem; border-radius: 0.2rem; display: inline-block;
+  }
+  .legend .dot-correct { background: var(--correct); }
+  .legend .dot-present { background: var(--present); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0 2px, transparent 2px 4px); }
+  .legend .dot-absent { background: var(--absent); opacity: 0.45; }
+  .board { display: grid; gap: 0.4rem; margin-bottom: 1.25rem; }
+  .row {
+    display: grid; gap: 0.4rem;
+    grid-template-columns: repeat(${length}, minmax(2.5rem, 1fr));
+  }
+  .tile {
+    min-height: 3rem; border: 2px solid var(--border); border-radius: 0.4rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; background: var(--surface); position: relative;
+  }
+  .tile .g { font-size: 0.65rem; font-family: system-ui, sans-serif; color: #64748b; margin-top: 0.15rem; }
+  .tile.correct { background: var(--correct); color: var(--correct-ink); border-color: var(--correct); }
+  .tile.present {
+    background: var(--present); color: var(--present-ink); border-color: var(--present);
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.22) 0 5px, transparent 5px 10px);
+  }
+  .tile.absent { background: var(--absent); color: var(--absent-ink); border-color: var(--absent); opacity: 0.85; }
+  .tile.pending { animation: pop 0.12s ease; }
+  @keyframes pop { from { transform: scale(0.9); } to { transform: scale(1); } }
+  .tile.correct .g, .tile.present .g, .tile.absent .g { color: rgba(255,255,255,0.85); }
+  .keyboard { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+  button.key {
+    min-width: 3rem; min-height: 3rem; border: 1px solid var(--border); border-radius: 0.4rem;
+    background: var(--surface); cursor: pointer; font-family: ui-monospace, monospace; position: relative;
+  }
+  button.key:hover, button.key:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.key:active { transform: translateY(1px); }
+  button.key:disabled { opacity: 0.4; cursor: default; }
+  button.key .g { display: block; font-size: 0.65rem; font-family: system-ui, sans-serif; color: #64748b; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .actions button {
+    border: none; border-radius: 0.4rem; padding: 0.65rem 1rem; font-weight: 600; cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .enter { background: var(--accent); color: #fff; flex: 1 1 10rem; }
+  .delete { background: #e8eef0; color: var(--fg); }
+  .status { min-height: 2.5rem; margin-top: 1rem; font-weight: 600; }
+  .status.win { color: var(--correct); }
+  .status.lose { color: #b91c1c; }
+  .tip {
+    position: absolute; bottom: calc(100% + 0.35rem); left: 50%; transform: translateX(-50%);
+    background: var(--fg); color: #fff; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem;
+    white-space: nowrap; pointer-events: none; display: none; z-index: 5;
+  }
+  .tile:hover .tip, .tile:focus-visible .tip, button.key:hover .tip, button.key:focus-visible .tip { display: block; }
+</style>
+</head>
+<body>
+<main>
+  <h1>${escapeHtml(title)}</h1>
+  <p class="meta">Guess the phoneme sequence using the keyboard below. Feedback is shown with colour <em>and</em> pattern.</p>
+  <div class="settings" aria-label="Activity settings">
+    <span>Difficulty: ${escapeHtml(difficulty)}</span>
+    <span>Guesses: ${maxAttempts}</span>
+    <span>${target.phonemes.length} phonemes</span>
+  </div>
+  <div class="legend" aria-hidden="true">
+    <span class="swatch"><span class="dot dot-correct"></span> correct</span>
+    <span class="swatch"><span class="dot dot-present"></span> wrong position</span>
+    <span class="swatch"><span class="dot dot-absent"></span> not present</span>
+  </div>
+  <div id="board" class="board" aria-label="Phoneme Wordle board"></div>
+  <div id="keyboard" class="keyboard" aria-label="Phoneme keyboard"></div>
+  <div class="actions">
+    <button type="button" class="enter" id="enter">Enter</button>
+    <button type="button" class="delete" id="delete">Delete</button>
+  </div>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+</main>
+<script>
+(function () {
+  const data = ${dataJson};
+  const target = data.target;
+  const inventory = data.inventory;
+  const maxAttempts = data.maxAttempts;
+  const length = data.length;
+  const showHints = data.showHints;
+  const english = data.english;
+  const guesses = Array.from({ length: maxAttempts }, () => Array(length).fill(null));
+  const results = Array.from({ length: maxAttempts }, () => Array(length).fill(null));
+  let row = 0;
+  let col = 0;
+  let locked = false;
+  const board = document.getElementById("board");
+  const keyboard = document.getElementById("keyboard");
+  const statusEl = document.getElementById("status");
+
+  function hint(p) {
+    return "/" + p.ipa + "/ → " + p.grapheme + " (" + p.example + ")";
+  }
+
+  function evaluate(guess) {
+    const result = Array(length).fill("absent");
+    const remaining = target.map((p) => p.ipa);
+    for (let i = 0; i < length; i++) {
+      if (guess[i] && guess[i].ipa === target[i].ipa) {
+        result[i] = "correct";
+        remaining[i] = "";
+      }
+    }
+    for (let i = 0; i < length; i++) {
+      if (result[i] === "correct" || !guess[i]) continue;
+      const idx = remaining.indexOf(guess[i].ipa);
+      if (idx >= 0) {
+        result[i] = "present";
+        remaining[idx] = "";
+      }
+    }
+    return result;
+  }
+
+  function render() {
+    board.innerHTML = "";
+    for (let r = 0; r < maxAttempts; r++) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "row";
+      for (let c = 0; c < length; c++) {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.tabIndex = 0;
+        const phoneme = guesses[r][c];
+        const status = results[r][c];
+        if (status) tile.classList.add(status);
+        if (r === row && c === col) tile.classList.add("pending");
+        if (phoneme) {
+          if (showHints) {
+            tile.title = hint(phoneme);
+            tile.innerHTML = "<span>/" + phoneme.ipa + "/</span><span class='g'>" + phoneme.grapheme + "</span><span class='tip'>" + phoneme.grapheme + " (" + phoneme.example + ")</span>";
+          } else {
+            tile.innerHTML = "<span>/" + phoneme.ipa + "/</span>";
+          }
+          const label = "/" + phoneme.ipa + "/" + (status ? " — " + statusLabel(status) : "");
+          tile.setAttribute("aria-label", label);
+        }
+        rowEl.appendChild(tile);
+      }
+      board.appendChild(rowEl);
+    }
+  }
+
+  function statusLabel(status) {
+    if (status === "correct") return "correct position";
+    if (status === "present") return "present but wrong position";
+    return "not in the word";
+  }
+
+  inventory.forEach((p) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "key";
+    if (showHints) {
+      btn.title = hint(p);
+      btn.setAttribute("aria-label", hint(p));
+      btn.innerHTML = "<span>/" + p.ipa + "/</span><span class='g'>" + p.grapheme + "</span><span class='tip'>" + p.grapheme + " (" + p.example + ")</span>";
+    } else {
+      btn.textContent = "/" + p.ipa + "/";
+    }
+    btn.addEventListener("click", () => {
+      if (locked || col >= length) return;
+      guesses[row][col] = p;
+      col += 1;
+      render();
+    });
+    keyboard.appendChild(btn);
+  });
+
+  document.getElementById("delete").addEventListener("click", () => {
+    if (locked || col === 0) return;
+    col -= 1;
+    guesses[row][col] = null;
+    render();
+  });
+
+  document.getElementById("enter").addEventListener("click", submit);
+
+  function submit() {
+    if (locked) return;
+    if (col < length) {
+      statusEl.className = "status";
+      statusEl.textContent = "Fill every phoneme slot before submitting.";
+      return;
+    }
+    const guess = guesses[row];
+    const result = evaluate(guess);
+    results[row] = result;
+    render();
+    if (result.every((s) => s === "correct")) {
+      locked = true;
+      statusEl.className = "status win";
+      statusEl.textContent = "Correct — " + target.map((p) => "/" + p.ipa + "/").join(" ") + " = " + english;
+      return;
+    }
+    if (row === maxAttempts - 1) {
+      locked = true;
+      statusEl.className = "status lose";
+      statusEl.textContent = "Out of attempts. Answer: " + target.map((p) => "/" + p.ipa + "/").join(" ") + " (" + english + ")";
+      return;
+    }
+    row += 1;
+    col = 0;
+    statusEl.className = "status";
+    statusEl.textContent = "";
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submit();
+    } else if (event.key === "Backspace") {
+      document.getElementById("delete").click();
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>`;
+}

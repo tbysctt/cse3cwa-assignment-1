@@ -1,0 +1,24 @@
+import type { Metadata } from "next";
+import { WordSearchBuilder } from "@/components/word-search/WordSearchBuilder";
+
+export const metadata: Metadata = {
+  title: "Word Search",
+};
+
+export default function WordSearchPage() {
+  return (
+    <div className="flex flex-col gap-[var(--section-gap)]">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Phoneme Word Search
+        </h1>
+        <p className="mt-2 max-w-2xl text-absent">
+          Build a phoneme-based word search from a small word list. Edit the
+          words, preview the generated grid, then download a single playable
+          HTML file.
+        </p>
+      </header>
+      <WordSearchBuilder />
+    </div>
+  );
+}

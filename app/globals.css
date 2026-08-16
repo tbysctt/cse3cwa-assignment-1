@@ -1,26 +1,190 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --page-pad-y: 2rem;
+  --section-gap: 1.5rem;
+  --surface-radius: 1rem;
+  --surface-pad: 1.25rem;
+  --surface-pad-lg: 1.5rem;
+  --control-radius: 0.75rem;
+  --control-min-height: 2.75rem;
+  --background: #f4f7f8;
+  --foreground: #1a2b32;
+  --surface: #ffffff;
+  --surface-muted: #e8eef0;
+  --border: #c5d2d7;
+  --accent: #0f766e;
+  --accent-hover: #0d9488;
+  --accent-contrast: #ffffff;
+  --correct: #15803d;
+  --present: #a16207;
+  --absent: #64748b;
+  --danger: #b91c1c;
+  --focus-ring: #0f766e;
+}
+
+.dark {
+  --background: #0f171a;
+  --foreground: #e8eef0;
+  --surface: #1a262b;
+  --surface-muted: #243238;
+  --border: #3a4d55;
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-contrast: #0f171a;
+  --correct: #4ade80;
+  --present: #fbbf24;
+  --absent: #94a3b8;
+  --danger: #f87171;
+  --focus-ring: #5eead4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-correct: var(--correct);
+  --color-present: var(--present);
+  --color-absent: var(--absent);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-noto-sans);
+  --font-mono: var(--font-noto-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-noto-sans), system-ui, sans-serif;
+}
+
+.ui-page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+}
+
+.ui-surface {
+  border: 1px solid var(--border);
+  border-radius: var(--surface-radius);
+  background: var(--surface);
+}
+
+.ui-surface-pad {
+  padding: var(--surface-pad);
+}
+
+@media (min-width: 640px) {
+  .ui-surface-pad {
+    padding: var(--surface-pad-lg);
+  }
+}
+
+.ui-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: var(--background);
+}
+
+.ui-control {
+  min-height: var(--control-min-height);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.ui-control::placeholder {
+  color: var(--absent);
+  opacity: 0.7;
+}
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-min-height);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    color 150ms,
+    opacity 150ms;
+}
+
+.ui-button-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.ui-button-primary:hover {
+  background: var(--accent-hover);
+}
+
+.ui-button-secondary {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.ui-button-secondary:hover {
+  background: var(--surface-muted);
+}
+
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--background);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100%;
+  z-index: 100;
+  border-radius: var(--control-radius);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 0.5rem 1rem;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

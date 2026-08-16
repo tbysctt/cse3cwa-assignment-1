@@ -10,35 +10,35 @@
   --surface-pad-lg: 1.5rem;
   --control-radius: 0.75rem;
   --control-min-height: 2.75rem;
-  --background: #f4f7f8;
-  --foreground: #1a2b32;
+  --background: #f4f7fb;
+  --foreground: #1a2332;
   --surface: #ffffff;
-  --surface-muted: #e8eef0;
-  --border: #c5d2d7;
-  --accent: #0f766e;
-  --accent-hover: #0d9488;
+  --surface-muted: #e8eef6;
+  --border: #c5d0e0;
+  --accent: #1d4ed8;
+  --accent-hover: #2563eb;
   --accent-contrast: #ffffff;
   --correct: #15803d;
   --present: #a16207;
   --absent: #64748b;
   --danger: #b91c1c;
-  --focus-ring: #0f766e;
+  --focus-ring: #1d4ed8;
 }
 
 .dark {
-  --background: #0f171a;
-  --foreground: #e8eef0;
-  --surface: #1a262b;
-  --surface-muted: #243238;
-  --border: #3a4d55;
-  --accent: #2dd4bf;
-  --accent-hover: #5eead4;
-  --accent-contrast: #0f171a;
+  --background: #0f141a;
+  --foreground: #e8eef6;
+  --surface: #1a222d;
+  --surface-muted: #243040;
+  --border: #3a4a5c;
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+  --accent-contrast: #0f141a;
   --correct: #4ade80;
   --present: #fbbf24;
   --absent: #94a3b8;
   --danger: #f87171;
-  --focus-ring: #5eead4;
+  --focus-ring: #93c5fd;
 }
 
 @theme inline {

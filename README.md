@@ -8,14 +8,7 @@ This is a three-part assignment:
 
 The app itself is a phoneme acitivity builder, designed for teachers who want to prepare activities for Speech Pathology students. Teachers can configure settings, preview student gameplay, and download a **single self-contained `.html`** file for browser use.
 
-## Tech stack
-
-- Next.js 16 (App Router)
-- React 19
-- TypeScript
-- Tailwind CSS 4
-
-## Accessibility and usability highlights
+**Accessibility and usability highlights:**
 
 - Keyboard-navigable controls and action buttons
 - Visible focus states and skip link
@@ -32,17 +25,12 @@ npm install
 # Run the development server, available at localhost:3000
 npm run dev
 
+# Run the unit tests
+npm run test
+
 # Run ESLint
 npm run lint
 
 # Build the app for production
 npm run build
 ```
-
-## About page video
-
-Place your walkthrough at:
-
-- `public/howto.mp4`
-
-The About page will render it automatically in the embedded player.

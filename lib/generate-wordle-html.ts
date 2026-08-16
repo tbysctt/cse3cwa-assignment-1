@@ -54,8 +54,8 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
 <title>${escapeHtml(title)}</title>
 <style>
   :root {
-    --bg: #f4f7f8; --fg: #1a2b32; --surface: #fff; --border: #c5d2d7;
-    --accent: #0f766e; --correct: #15803d; --present: #a16207; --absent: #64748b;
+    --bg: #f4f7fb; --fg: #1a2332; --surface: #fff; --border: #c5d0e0;
+    --accent: #1d4ed8; --correct: #15803d; --present: #a16207; --absent: #64748b;
     --correct-ink: #ffffff; --present-ink: #ffffff; --absent-ink: #eef2f4;
   }
   * { box-sizing: border-box; }

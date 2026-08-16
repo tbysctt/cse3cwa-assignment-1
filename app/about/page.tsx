@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-(--section-gap)">
+    <div className="mx-auto flex flex-col gap-(--section-gap)">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">About</h1>
         <p className="mt-2 text-absent">
@@ -55,11 +55,8 @@ export default function AboutPage() {
       <section className="ui-surface p-5">
         <h2 className="text-xl font-semibold">Guide</h2>
         <p className="mt-2 text-sm text-absent">
-          A walkthrough of the builder. Add{" "}
-          <code className="rounded bg-surface-muted px-1">
-            public/guide.mp4
-          </code>{" "}
-          or replace this element with a video embed.
+          A walkthrough of the code, commits and functionality of the activity
+          builder.
         </p>
         <div className="mt-4 aspect-video overflow-hidden rounded-(--control-radius) border border-border bg-surface-muted">
           <video
@@ -73,20 +70,6 @@ export default function AboutPage() {
             <code>public/guide.mp4</code> or embed an external video here.
           </video>
         </div>
-        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
-          <li>Open Wordle or Word Search from the navigation bar.</li>
-          <li>
-            For Wordle, choose a phoneme length, an HCE corpus word, and a
-            difficulty. For Word Search, pick five corpus words and a
-            difficulty.
-          </li>
-          <li>Try the live preview exactly as a student would play it.</li>
-          <li>
-            Click <strong>Generate HTML</strong> to download a playable
-            classroom file.
-          </li>
-          <li>Change the light/dark theme or layout density under Settings.</li>
-        </ol>
       </section>
     </div>
   );

@@ -73,7 +73,12 @@ export function generateWordSearchHtml(
   body { margin: 0; font-family: "Noto Sans", system-ui, sans-serif; background: var(--bg); color: var(--fg); }
   main { max-width: 54rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   h1 { font-size: 1.5rem; letter-spacing: 0.04em; margin: 0 0 0.5rem; }
-  .meta { color: #64748b; margin-bottom: 1rem; }
+  .meta { color: #64748b; margin-bottom: 0.5rem; }
+  .how-to {
+    list-style: none; padding: 0; margin: 0 0 1rem;
+    color: #64748b; font-size: 0.85rem; display: grid; gap: 0.2rem;
+  }
+  .how-to strong { color: var(--fg); }
   .settings {
     display: inline-flex; flex-wrap: wrap; gap: 0.4rem 0.9rem;
     margin-bottom: 1rem; font-size: 0.85rem; color: #64748b;
@@ -136,7 +141,11 @@ export function generateWordSearchHtml(
 <body>
 <main>
   <h1>${escapeHtml(title)}</h1>
-  <p class="meta">Select a straight horizontal, vertical, or diagonal line of connected phoneme cells (tap or drag) that matches a word in the list. Hover or focus a cell for letter hints.</p>
+  <p class="meta">Select a straight horizontal, vertical, or diagonal line of connected phoneme cells that matches a word in the list. Hover or focus a cell for letter hints.</p>
+  <ul class="how-to">
+    <li><strong>Mouse or touch:</strong> drag across a straight horizontal, vertical, or diagonal line of phonemes.</li>
+    <li><strong>Keyboard:</strong> Tab to a cell, press Enter or Space to set the start, move to the end cell, then press Enter or Space again.</li>
+  </ul>
   <div class="settings" aria-label="Activity settings">
     <span>Difficulty: ${escapeHtml(difficulty)}</span>
     <span>${words.length} words</span>
@@ -169,7 +178,6 @@ export function generateWordSearchHtml(
   let selected = [];
   let invalid = [];
   let anchor = null;
-  let selectionBeforePointer = [];
   let suppressClick = false;
   let invalidTimer = null;
   let invalidGeneration = 0;
@@ -311,13 +319,8 @@ export function generateWordSearchHtml(
   }
 
   function commitSelection(keys) {
-    if (keys.length === 0) return;
+    if (keys.length < 2) return;
     if (tryMatch(keys)) return;
-    if (keys.length === 1) {
-      selected = keys.slice();
-      updateSelectionClasses();
-      return;
-    }
     flashInvalid(keys);
   }
 
@@ -351,7 +354,6 @@ export function generateWordSearchHtml(
         clearInvalidFeedback();
         suppressClick = true;
         selecting = true;
-        selectionBeforePointer = selected.slice();
         anchor = key(r, c);
         selected = [anchor];
         updateSelectionClasses();
@@ -359,33 +361,34 @@ export function generateWordSearchHtml(
       btn.addEventListener("pointerenter", () => {
         if (selecting) selectSegmentTo(key(r, c));
       });
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        // Mouse and touch selection is drag-only; only keyboard activation
+        // (detail 0) drives the click workflow.
         if (suppressClick) {
           suppressClick = false;
           return;
         }
-        if (selecting) return;
+        if (selecting || e.detail !== 0) return;
         clearInvalidFeedback();
-        const clicked = key(r, c);
-        if (selected.length === 0) {
-          anchor = clicked;
-          selected = [clicked];
+        const activated = key(r, c);
+        if (!anchor || selected.length === 0) {
+          anchor = activated;
+          selected = [activated];
           updateSelectionClasses();
           return;
         }
-        if (selected.length === 1 && selected[0] === clicked) {
+        if (anchor === activated) {
           anchor = null;
           selected = [];
           updateSelectionClasses();
           return;
         }
-        const segment = cellsAlongSegment(selected[0], clicked);
+        const segment = cellsAlongSegment(anchor, activated);
+        anchor = null;
         if (!segment) {
-          flashInvalid(selected.slice());
-          anchor = null;
+          flashInvalid(selected.concat(activated));
           return;
         }
-        anchor = segment[0];
         selected = segment;
         updateSelectionClasses();
         commitSelection(segment);
@@ -398,30 +401,12 @@ export function generateWordSearchHtml(
     if (!selecting) return;
     selecting = false;
     const keys = selected.slice();
-    if (keys.length === 1) {
-      const selectedKey = keys[0];
-      const next = selectionBeforePointer.includes(selectedKey)
-        ? selectionBeforePointer.filter((value) => value !== selectedKey)
-        : selectionBeforePointer.concat(selectedKey);
-      if (next.length <= 1) {
-        anchor = next[0] || null;
-        clearInvalidFeedback();
-        selected = next;
-        updateSelectionClasses();
-        tryMatch(next);
-        return;
-      }
-      const built = cellsAlongSegment(next[0], next[next.length - 1]);
-      if (!built || built.length !== next.length ||
-          !built.every((value, index) => value === next[index])) {
-        flashInvalid(next);
-        anchor = null;
-        return;
-      }
-      anchor = built[0];
-      selected = built;
+    anchor = null;
+    // A press without dragging across a second cell selects nothing.
+    if (keys.length < 2) {
+      clearInvalidFeedback();
+      selected = [];
       updateSelectionClasses();
-      commitSelection(built);
       return;
     }
     commitSelection(keys);

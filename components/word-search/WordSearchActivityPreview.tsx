@@ -20,7 +20,7 @@ export function WordSearchActivityPreview({
 }) {
   return (
     <ActivityPreviewShell
-      description="The grid is generated from your word list. Select a straight horizontal, vertical, or diagonal line of connected phonemes (click or drag) to find a word."
+      description="The grid is generated from your word list. Drag across a straight horizontal, vertical, or diagonal line of connected phonemes to find a word, or use the keyboard steps shown below."
     >
       {puzzle ? (
         <WordSearchGame

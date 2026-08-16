@@ -376,4 +376,80 @@ describe("standalone activity generators", () => {
       { timeout: INVALID_SELECTION_FLASH_MS + 200 },
     );
   });
+
+  it("clears standalone pointer presses that never drag to a second cell", () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const html = generateWordSearchHtml({
+      words: WORD_SEARCH_WORDS,
+      puzzle,
+      difficulty: "medium",
+      showHints: false,
+    });
+    const dom = new JSDOM(html, {
+      runScripts: "dangerously",
+      pretendToBeVisual: true,
+    });
+    const cell = dom.window.document.querySelector(
+      '[data-key="0-0"]',
+    ) as HTMLButtonElement;
+
+    cell.dispatchEvent(
+      new dom.window.PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    expect(cell.classList.contains("selected")).toBe(true);
+
+    dom.window.document.dispatchEvent(
+      new dom.window.PointerEvent("pointerup", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    expect(cell.classList.contains("selected")).toBe(false);
+    expect(cell.classList.contains("invalid")).toBe(false);
+    expect(dom.window.document.getElementById("status")).toBeEmptyDOMElement();
+
+    // A plain mouse click must not build a sticky anchor.
+    cell.click();
+    expect(cell.classList.contains("selected")).toBe(false);
+  });
+
+  it("supports standalone keyboard start and end selection with instructions", () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const html = generateWordSearchHtml({
+      words: WORD_SEARCH_WORDS,
+      puzzle,
+      difficulty: "medium",
+      showHints: false,
+    });
+    const dom = new JSDOM(html, {
+      runScripts: "dangerously",
+      pretendToBeVisual: true,
+    });
+    const howTo = dom.window.document.querySelector(".how-to");
+    expect(howTo?.textContent).toContain("Mouse or touch:");
+    expect(howTo?.textContent).toContain("Keyboard:");
+
+    const keys = cellsForPlacement(puzzle.placements[0]);
+    const keyboardClick = (key: string) => {
+      const cell = dom.window.document.querySelector(
+        `[data-key="${key}"]`,
+      ) as HTMLButtonElement;
+      cell.dispatchEvent(
+        new dom.window.MouseEvent("click", { bubbles: true, detail: 0 }),
+      );
+      return cell;
+    };
+
+    const start = keyboardClick(keys[0]);
+    expect(start.classList.contains("selected")).toBe(true);
+    keyboardClick(keys[keys.length - 1]);
+    expect(dom.window.document.getElementById("status")).toHaveTextContent(
+      puzzle.placements[0].word.english,
+    );
+  });
 });

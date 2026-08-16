@@ -289,7 +289,7 @@ describe("WordSearchGame", () => {
 
     await user.click(screen.getByRole("button", { name: "Reset activity" }));
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
-    const list = screen.getByRole("list");
+    const list = screen.getByRole("list", { name: "Find these words" });
     expect(within(list).queryByText(/English:/)).not.toBeInTheDocument();
   });
 
@@ -398,7 +398,100 @@ describe("WordSearchGame", () => {
     );
   });
 
-  it("rejects off-axis click extensions and clears after the flash", async () => {
+  it("clears a plain pointer click without matching or flashing", async () => {
+    const user = userEvent.setup();
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const { container } = render(
+      <WordSearchGame
+        puzzle={puzzle}
+        words={WORD_SEARCH_WORDS}
+        showHints={false}
+      />,
+    );
+    const cell = gridButton(container, "0-0");
+
+    await user.click(cell);
+
+    expect(cell.getAttribute("aria-pressed")).toBe("false");
+    expect(cell.getAttribute("data-invalid")).toBeNull();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+    // A second click elsewhere must not build a line from a stale anchor.
+    const other = gridButton(container, "0-1");
+    await user.click(other);
+    expect(cell.getAttribute("aria-pressed")).toBe("false");
+    expect(other.getAttribute("aria-pressed")).toBe("false");
+    expect(other.getAttribute("data-invalid")).toBeNull();
+  });
+
+  it("clears a press and release that never drags to a second cell", () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const { container } = render(
+      <WordSearchGame
+        puzzle={puzzle}
+        words={WORD_SEARCH_WORDS}
+        showHints={false}
+      />,
+    );
+    const cell = gridButton(container, "0-0");
+
+    fireEvent.pointerDown(cell, { button: 0 });
+    expect(cell.getAttribute("aria-pressed")).toBe("true");
+
+    fireEvent.pointerUp(document);
+    expect(cell.getAttribute("aria-pressed")).toBe("false");
+    expect(cell.getAttribute("data-invalid")).toBeNull();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("supports keyboard start and end selection for matches", () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const { container } = render(
+      <WordSearchGame
+        puzzle={puzzle}
+        words={WORD_SEARCH_WORDS}
+        showHints={false}
+      />,
+    );
+    const placement = puzzle.placements[0];
+    const keys = cellsForPlacement(placement);
+
+    fireEvent.click(gridButton(container, keys[0]), { detail: 0 });
+    expect(gridButton(container, keys[0]).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+
+    fireEvent.click(gridButton(container, keys[keys.length - 1]), { detail: 0 });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      new RegExp(placement.word.english, "i"),
+    );
+  });
+
+  it("matches reverse keyboard selections and toggles off a repeated start", () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const { container } = render(
+      <WordSearchGame
+        puzzle={puzzle}
+        words={WORD_SEARCH_WORDS}
+        showHints={false}
+      />,
+    );
+    const keys = cellsForPlacement(puzzle.placements[0]);
+
+    const start = gridButton(container, keys[0]);
+    fireEvent.click(start, { detail: 0 });
+    fireEvent.click(start, { detail: 0 });
+    expect(start.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+    fireEvent.click(gridButton(container, keys[keys.length - 1]), { detail: 0 });
+    fireEvent.click(gridButton(container, keys[0]), { detail: 0 });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      new RegExp(puzzle.placements[0].word.english, "i"),
+    );
+  });
+
+  it("flashes and clears off-axis keyboard selections", async () => {
     const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
     const { container } = render(
       <WordSearchGame
@@ -410,8 +503,8 @@ describe("WordSearchGame", () => {
 
     const first = gridButton(container, "0-0");
     const offAxis = gridButton(container, "1-2");
-    fireEvent.click(first);
-    fireEvent.click(offAxis);
+    fireEvent.click(first, { detail: 0 });
+    fireEvent.click(offAxis, { detail: 0 });
     expect(first.getAttribute("data-invalid")).toBe("true");
     await waitFor(
       () => {
@@ -420,5 +513,21 @@ describe("WordSearchGame", () => {
       { timeout: INVALID_SELECTION_FLASH_MS + 200 },
     );
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("shows short mouse and keyboard instructions", () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    render(
+      <WordSearchGame
+        puzzle={puzzle}
+        words={WORD_SEARCH_WORDS}
+        showHints={false}
+      />,
+    );
+    expect(screen.getByText(/Mouse or touch:/)).toBeInTheDocument();
+    expect(screen.getByText(/Keyboard:/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/press Enter or Space to set the start/i),
+    ).toBeInTheDocument();
   });
 });

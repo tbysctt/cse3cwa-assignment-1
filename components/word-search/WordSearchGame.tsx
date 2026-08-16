@@ -30,7 +30,6 @@ export function WordSearchGame({
   const pointerIntentRef = useRef(false);
   const draggingRef = useRef(false);
   const anchorRef = useRef<string | null>(null);
-  const selectionBeforePointerRef = useRef<string[]>([]);
   const invalidTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const invalidGenerationRef = useRef(0);
 
@@ -91,14 +90,10 @@ export function WordSearchGame({
     return true;
   }
 
+  /** Commit a completed straight line of two or more cells. */
   function commitSelection(keys: string[]) {
-    if (keys.length === 0) return;
+    if (keys.length < 2) return;
     if (tryMatch(keys)) return;
-    if (keys.length === 1) {
-      // Single-cell taps may leave a pending selection for further clicks.
-      setSelectedKeys(keys);
-      return;
-    }
     flashInvalidSelection(keys);
   }
 
@@ -111,32 +106,30 @@ export function WordSearchGame({
     setSelectedKeys(segment);
   }
 
-  function toggleCell(row: number, col: number) {
-    const key = cellKey(row, col);
+  /** Keyboard workflow: first activation sets the start, the second the endpoint. */
+  function activateWithKeyboard(key: string) {
     clearInvalidFeedback();
-    const prev = selectedRef.current;
+    const anchor = anchorRef.current;
 
-    if (prev.length === 0) {
+    if (!anchor || selectedRef.current.length === 0) {
       anchorRef.current = key;
       setSelectedKeys([key]);
       return;
     }
 
-    const anchor = prev[0];
-    if (prev.length === 1 && prev[0] === key) {
+    if (anchor === key) {
       anchorRef.current = null;
       setSelectedKeys([]);
       return;
     }
 
     const segment = cellsAlongSegment(anchor, key);
+    anchorRef.current = null;
     if (!segment) {
-      flashInvalidSelection(prev);
-      anchorRef.current = null;
+      flashInvalidSelection([...selectedRef.current, key]);
       return;
     }
 
-    anchorRef.current = segment[0];
     setSelectedKeys(segment);
     commitSelection(segment);
   }
@@ -146,31 +139,12 @@ export function WordSearchGame({
       if (!draggingRef.current) return;
       draggingRef.current = false;
       const keys = selectedRef.current;
+      anchorRef.current = null;
 
-      if (keys.length === 1) {
-        const key = keys[0];
-        const previous = selectionBeforePointerRef.current;
-        const next = previous.includes(key)
-          ? previous.filter((item) => item !== key)
-          : [...previous, key];
-        // Keep click-to-build geometry: a lone tap toggles against prior selection.
-        if (next.length <= 1) {
-          anchorRef.current = next[0] ?? null;
-          clearInvalidFeedback();
-          setSelectedKeys(next);
-          tryMatch(next);
-          return;
-        }
-        const built = cellsAlongSegment(next[0], next[next.length - 1]);
-        if (!built || built.length !== next.length || !built.every((k, i) => k === next[i])) {
-          // Prior multi-cell selection plus a tap that broke the line.
-          flashInvalidSelection(next);
-          anchorRef.current = null;
-          return;
-        }
-        anchorRef.current = built[0];
-        setSelectedKeys(built);
-        commitSelection(built);
+      // A press without dragging across a second cell selects nothing.
+      if (keys.length < 2) {
+        clearInvalidFeedback();
+        setSelectedKeys([]);
         return;
       }
 
@@ -213,6 +187,21 @@ export function WordSearchGame({
     <div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start">
       <div className="min-w-0">
+        <ul
+          className="mb-3 space-y-1 text-xs text-absent"
+          aria-label="How to select phonemes"
+        >
+          <li>
+            <strong className="font-semibold text-foreground">Mouse or touch:</strong>{" "}
+            drag across a straight horizontal, vertical, or diagonal line of
+            phonemes.
+          </li>
+          <li>
+            <strong className="font-semibold text-foreground">Keyboard:</strong>{" "}
+            Tab to a cell, press Enter or Space to set the start, move to the end
+            cell, then press Enter or Space again.
+          </li>
+        </ul>
         <div className="overflow-x-auto pb-1">
         <div
           className="grid gap-1.5"
@@ -267,7 +256,6 @@ export function WordSearchGame({
                     clearInvalidFeedback();
                     pointerIntentRef.current = true;
                     draggingRef.current = true;
-                    selectionBeforePointerRef.current = selectedRef.current;
                     anchorRef.current = key;
                     setSelectedKeys([key]);
                   }}
@@ -275,12 +263,15 @@ export function WordSearchGame({
                     if (!draggingRef.current) return;
                     selectSegmentTo(key);
                   }}
-                  onClick={() => {
+                  onClick={(event) => {
+                    // Mouse and touch selection is drag-only; only keyboard
+                    // activation (detail 0) drives the click workflow.
                     if (pointerIntentRef.current) {
                       pointerIntentRef.current = false;
                       return;
                     }
-                    toggleCell(rowIndex, colIndex);
+                    if (event.detail !== 0) return;
+                    activateWithKeyboard(key);
                   }}
                 >
                   <span aria-hidden="true">
@@ -327,7 +318,7 @@ export function WordSearchGame({
         <h3 className="text-base font-semibold text-foreground">
           Find these words
         </h3>
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 space-y-2" aria-label="Find these words">
           {words.map((word) => {
             const done = foundIds.has(word.id);
             return (

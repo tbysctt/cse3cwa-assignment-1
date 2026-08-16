@@ -19,7 +19,7 @@ export function Field({
   const id = htmlFor ?? generatedId;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <label
         htmlFor={id}
         className="text-sm font-semibold text-foreground"

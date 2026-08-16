@@ -18,7 +18,7 @@ export function WordSearchActivityPreview({
   return (
     <section
       aria-label="Activity preview"
-      className="rounded-xl border border-border bg-surface p-4 sm:p-6"
+      className="ui-surface ui-surface-pad"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Activity Preview</h2>
@@ -41,7 +41,7 @@ export function WordSearchActivityPreview({
           />
         </div>
       ) : (
-        <p className="mt-5 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+        <p className="mt-5 rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
           Could not fit the current word list into the grid. Try shorter words
           or fewer of them.
         </p>

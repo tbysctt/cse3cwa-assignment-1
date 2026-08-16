@@ -13,7 +13,7 @@ export function SectionCard({
 }) {
   return (
     <section
-      className={`rounded-xl border border-border bg-surface p-4 sm:p-6 ${className}`}
+      className={`ui-surface ui-surface-pad ${className}`}
     >
       <h2 className="text-lg font-semibold">{title}</h2>
       {description ? (

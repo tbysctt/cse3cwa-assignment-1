@@ -24,9 +24,7 @@ export function generateWordSearchHtml(
 
   const wordsJson = toJson(
     words.map((word) => {
-      const placement = puzzle.placements.find(
-        (p) => p.word.id === word.id,
-      );
+      const placement = puzzle.placements.find((p) => p.word.id === word.id);
       return {
         id: word.id,
         english: word.english,

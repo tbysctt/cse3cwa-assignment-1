@@ -52,7 +52,7 @@ export function WordleGrid({
     <div
       role="grid"
       aria-label={`Phoneme Wordle board with ${maxAttempts} guesses`}
-      className="flex flex-col gap-1.5"
+      className="flex flex-col gap-2"
     >
       {rows.map((row, index) => (
         <WordleRow key={index} row={row} columns={columns} />

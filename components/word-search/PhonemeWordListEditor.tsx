@@ -45,7 +45,7 @@ export function PhonemeWordListEditor({
             <li
               key={row.id}
               className={[
-                "rounded-lg border border-border p-3",
+                "rounded-[var(--surface-radius)] border border-border p-3",
                 active ? "bg-accent/5" : "bg-background",
               ].join(" ")}
             >
@@ -60,7 +60,7 @@ export function PhonemeWordListEditor({
                     }
                     placeholder="e.g. thin"
                     autoComplete="off"
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-absent/70"
+                    className="ui-control w-full px-3 py-2 text-sm"
                   />
                 </label>
 
@@ -73,7 +73,7 @@ export function PhonemeWordListEditor({
                     row.phonemes.map((phoneme, phonemeIndex) => (
                       <span
                         key={`${phonemeIndex}-${phoneme.ipa}`}
-                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-border bg-surface px-1.5 font-mono text-sm"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-[var(--control-radius)] border border-border bg-surface px-1.5 font-mono text-sm"
                       >
                         {formatIpa(phoneme.ipa)}
                       </span>
@@ -84,10 +84,10 @@ export function PhonemeWordListEditor({
                 <button
                   type="button"
                   className={[
-                    "rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+                    "ui-button px-3 py-2",
                     active
-                      ? "border-accent bg-accent text-accent-contrast"
-                      : "border-border bg-surface hover:bg-surface-muted",
+                      ? "ui-button-primary"
+                      : "ui-button-secondary",
                   ].join(" ")}
                   aria-expanded={active}
                   onClick={() =>
@@ -103,7 +103,7 @@ export function PhonemeWordListEditor({
       </ul>
 
       {activeRow ? (
-        <div className="rounded-lg border border-border bg-background p-3">
+        <div className="ui-panel p-3">
           <p className="mb-2 text-sm font-semibold text-foreground">
             Edit phonemes for{" "}
             <span className="font-mono text-accent">

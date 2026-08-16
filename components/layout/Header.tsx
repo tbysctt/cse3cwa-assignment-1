@@ -45,14 +45,11 @@ export function Header() {
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent">
-            CSE3CWA Assessment 1
-          </p>
           <Link
             href="/"
             className="block truncate text-lg font-semibold text-foreground sm:text-xl"
           >
-            {student.shortTitle}
+            {student.assessmentTitle}
           </Link>
         </div>
 
@@ -60,7 +57,7 @@ export function Header() {
           <button
             ref={buttonRef}
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-foreground hover:bg-surface-muted"
+            className="ui-button ui-button-secondary h-10 w-10 p-0"
             aria-expanded={open}
             aria-controls={menuId}
             aria-haspopup="menu"
@@ -81,7 +78,10 @@ export function Header() {
               role="menu"
               className="absolute right-0 z-40 mt-2 w-56"
             >
-              <MobileMenu links={allNavLinks} onNavigate={() => setOpen(false)} />
+              <MobileMenu
+                links={allNavLinks}
+                onNavigate={() => setOpen(false)}
+              />
             </div>
           ) : null}
         </div>

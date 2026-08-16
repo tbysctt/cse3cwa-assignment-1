@@ -25,7 +25,7 @@ export function WordleActivityPreview({
   return (
     <section
       aria-label="Activity preview"
-      className="rounded-xl border border-border bg-surface p-4 sm:p-6"
+      className="ui-surface ui-surface-pad"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Activity Preview</h2>

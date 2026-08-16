@@ -32,7 +32,7 @@ export function PhonemeGlyph({
   const accessibleName = ariaLabel ?? (showHint ? label : formatIpa(phoneme.ipa));
 
   const sharedClass = [
-    "relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border bg-surface px-2 py-1 font-mono text-base leading-none",
+    "relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-[var(--control-radius)] border border-border bg-surface px-2 py-1 font-mono text-base leading-none",
     className,
   ].join(" ");
 
@@ -52,7 +52,7 @@ export function PhonemeGlyph({
       {showHint && open ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-md bg-foreground px-2 py-1 text-center font-sans text-xs font-medium text-background shadow-md"
+          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-[var(--control-radius)] bg-foreground px-2 py-1 text-center font-sans text-xs font-medium text-background shadow-md"
         >
           {phoneme.grapheme} ({phoneme.example})
         </span>

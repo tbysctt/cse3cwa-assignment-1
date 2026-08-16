@@ -18,7 +18,7 @@ export function isActiveLink(href: string, pathname: string): boolean {
 
 export function linkClass(active: boolean): string {
   return [
-    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+    "rounded-[var(--control-radius)] px-3 py-2 text-sm font-medium transition-colors",
     active
       ? "bg-accent text-accent-contrast"
       : "text-foreground hover:bg-surface-muted",

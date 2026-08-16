@@ -22,7 +22,7 @@ export function MobileMenu({
   return (
     <nav
       aria-label="Compact menu"
-      className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-2 shadow-lg"
+      className="flex flex-col gap-2 rounded-[var(--surface-radius)] border border-border bg-surface p-2 shadow-lg"
     >
       {links.map((link) => {
         const active = isActiveLink(link.href, pathname);

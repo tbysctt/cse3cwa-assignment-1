@@ -16,7 +16,7 @@ export function NavBar() {
       aria-label="Primary"
       className="hidden border-b border-border bg-surface px-4 sm:px-6 md:block"
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-1 py-2">
+      <div className="mx-auto flex max-w-6xl items-center gap-2 py-2">
         {allNavLinks.map((link) => {
           const active = isActiveLink(link.href, pathname);
           return (

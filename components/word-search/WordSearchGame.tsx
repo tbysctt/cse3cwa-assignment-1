@@ -86,7 +86,7 @@ export function WordSearchGame({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start">
       <div className="min-w-0">
         <div
-          className="grid gap-1"
+          className="grid gap-2"
           style={{
             gridTemplateColumns: `repeat(${puzzle.size}, minmax(2.3rem, 1fr))`,
           }}
@@ -113,7 +113,7 @@ export function WordSearchGame({
                   key={key}
                   type="button"
                   className={[
-                    "relative flex min-h-12 flex-col items-center justify-center rounded-md border font-mono text-sm transition-colors",
+                    "relative flex min-h-12 flex-col items-center justify-center rounded-[var(--control-radius)] border font-mono text-sm transition-colors",
                     isFound
                       ? "border-correct bg-correct/20"
                       : isSelected
@@ -164,7 +164,7 @@ export function WordSearchGame({
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-surface-muted"
+            className="ui-button ui-button-secondary px-4 py-2"
             onClick={() => {
               setSelectedKeys([]);
               setMessage("");
@@ -174,7 +174,7 @@ export function WordSearchGame({
           </button>
           <button
             type="button"
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-surface-muted"
+            className="ui-button ui-button-secondary px-4 py-2"
             onClick={reset}
           >
             Reset activity
@@ -193,7 +193,7 @@ export function WordSearchGame({
               <li
                 key={word.id}
                 className={[
-                  "rounded-lg border border-border p-3",
+                  "rounded-[var(--surface-radius)] border border-border p-3",
                   done ? "border-correct/50 bg-correct/10" : "bg-background",
                 ].join(" ")}
               >
@@ -201,7 +201,7 @@ export function WordSearchGame({
                   {word.phonemes.map((phoneme, index) => (
                     <span
                       key={`${index}-${phoneme.ipa}`}
-                      className="inline-flex min-h-8 min-w-8 items-center justify-center rounded border border-border bg-surface px-1.5 font-mono text-sm"
+                      className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-[var(--control-radius)] border border-border bg-surface px-1.5 font-mono text-sm"
                     >
                       {formatIpa(phoneme.ipa)}
                     </span>

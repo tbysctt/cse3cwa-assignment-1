@@ -1,8 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
-import { setLayoutDensity, setTheme } from "@/app/actions/theme";
-import type { LayoutDensity, Theme } from "@/lib/theme";
+import { setTheme } from "@/app/actions/theme";
+import type { Theme } from "@/lib/theme";
 
 function OptionButton({
   label,
@@ -19,10 +19,10 @@ function OptionButton({
     <button
       type="button"
       className={[
-        "rounded-md border px-4 py-2 text-sm font-medium capitalize transition-colors",
+        "ui-button capitalize",
         selected
-          ? "border-accent bg-accent text-accent-contrast"
-          : "border-border bg-background hover:bg-surface-muted",
+          ? "ui-button-primary"
+          : "ui-button-secondary",
       ].join(" ")}
       aria-pressed={selected}
       disabled={disabled}
@@ -35,15 +35,13 @@ function OptionButton({
 
 export function ThemeControls({
   theme,
-  density,
 }: {
   theme: Theme;
-  density: LayoutDensity;
 }) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <fieldset disabled={pending} className="space-y-3">
         <legend className="text-base font-semibold text-foreground">
           Colour theme
@@ -61,29 +59,6 @@ export function ThemeControls({
               onSelect={() => {
                 startTransition(() => {
                   void setTheme(value);
-                });
-              }}
-            />
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset disabled={pending} className="space-y-3">
-        <legend className="text-base font-semibold text-foreground">
-          Layout density
-        </legend>
-        <p className="text-sm text-absent">
-          Controls page padding and spacing between sections.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          {(["comfortable", "compact"] as const).map((value) => (
-            <OptionButton
-              key={value}
-              label={value}
-              selected={density === value}
-              onSelect={() => {
-                startTransition(() => {
-                  void setLayoutDensity(value);
                 });
               }}
             />

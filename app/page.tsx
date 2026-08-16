@@ -3,13 +3,10 @@ import { student } from "@/lib/student";
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
-      <section className="rounded-2xl border border-border bg-surface px-6 py-10 sm:px-10 sm:py-14">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-          CSE3CWA Assessment 1
-        </p>
-        <h1 className="mt-2 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
-          {student.shortTitle}
+    <div className="ui-page-stack">
+      <section className="ui-surface px-6 py-10 sm:px-10 sm:py-14">
+        <h1 className="max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
+          {student.assessmentTitle}
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-absent sm:text-lg">
           Build phoneme-based literacy activities for Speech Pathology students
@@ -20,13 +17,13 @@ export default function HomePage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/wordle"
-            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-accent-contrast transition-colors hover:bg-accent-hover"
+            className="ui-button ui-button-primary"
           >
             Create a Wordle activity
           </Link>
           <Link
             href="/word-search"
-            className="rounded-md border border-border bg-background px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-surface-muted"
+            className="ui-button ui-button-secondary"
           >
             Create a Word Search activity
           </Link>
@@ -34,7 +31,7 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <article className="flex flex-col rounded-xl border border-border bg-surface p-5">
+        <article className="flex flex-col ui-surface p-5">
           <h2 className="text-lg font-semibold">Phoneme Wordle</h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-absent">
             Students guess a phoneme sequence with colour-and-pattern feedback
@@ -48,7 +45,7 @@ export default function HomePage() {
           </Link>
         </article>
 
-        <article className="flex flex-col rounded-xl border border-border bg-surface p-5">
+        <article className="flex flex-col ui-surface p-5">
           <h2 className="text-lg font-semibold">Phoneme Word Search</h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-absent">
             Learners find phoneme-based words in a generated grid — a useful
@@ -63,9 +60,9 @@ export default function HomePage() {
         </article>
       </section>
 
-      <section className="rounded-xl border border-border bg-surface p-5">
+      <section className="ui-surface p-5">
         <h2 className="text-lg font-semibold">How the workflow works</h2>
-        <ol className="mt-3 flex flex-col gap-3 sm:flex-row sm:gap-8">
+        <ol className="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-8">
           <li className="flex items-start gap-3">
             <span
               aria-hidden="true"

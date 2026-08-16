@@ -13,7 +13,7 @@ import {
 } from "@/lib/wordle";
 
 const inputClass =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-absent/70 focus:border-accent";
+  "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export function WordleConfigForm({
   target,
@@ -115,7 +115,11 @@ export function WordleConfigForm({
             When on, phoneme buttons show tooltips such as /θ/ → TH (as in thin)
             on hover or keyboard focus.
           </p>
-          <div className="mt-2 flex gap-4" role="radiogroup" aria-label="Show phoneme hints">
+          <div
+            className="mt-2 flex gap-4"
+            role="radiogroup"
+            aria-label="Show phoneme hints"
+          >
             {[
               { value: true, label: "Yes" },
               { value: false, label: "No" },
@@ -182,7 +186,7 @@ export function WordleConfigForm({
         <div className="border-t border-border pt-4">
           <button
             type="button"
-            className="w-full rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-accent-contrast transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-button ui-button-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
             onClick={onGenerate}
             disabled={!canGenerate}
             title={

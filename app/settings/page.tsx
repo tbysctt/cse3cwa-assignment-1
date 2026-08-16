@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ThemeControls } from "@/components/settings/ThemeControls";
-import {
-  DENSITY_COOKIE,
-  THEME_COOKIE,
-  parseDensity,
-  parseTheme,
-} from "@/lib/theme";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -15,10 +10,9 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const cookieStore = await cookies();
   const theme = parseTheme(cookieStore.get(THEME_COOKIE)?.value);
-  const density = parseDensity(cookieStore.get(DENSITY_COOKIE)?.value);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-[var(--section-gap)]">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="mt-2 text-absent">
@@ -26,8 +20,8 @@ export default async function SettingsPage() {
           visits.
         </p>
       </header>
-      <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-        <ThemeControls theme={theme} density={density} />
+      <section className="ui-surface ui-surface-pad">
+        <ThemeControls theme={theme} />
       </section>
     </div>
   );

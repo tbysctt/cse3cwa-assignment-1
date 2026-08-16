@@ -38,8 +38,8 @@ export function PhonemePicker({
   const atLimit = max !== undefined && phonemes.length >= max;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-absent">
           {label}:
         </span>
@@ -52,7 +52,7 @@ export function PhonemePicker({
             <button
               key={`${index}-${phoneme.ipa}`}
               type="button"
-              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-border bg-surface px-2 font-mono text-base hover:border-danger hover:bg-surface-muted"
+              className="ui-button ui-button-secondary min-h-10 min-w-10 px-2 font-mono text-base hover:border-danger"
               aria-label={`Remove ${formatIpa(phoneme.ipa)}${showHint ? ` (${hintLabel(phoneme)})` : ""}`}
               title={`Remove ${formatIpa(phoneme.ipa)}`}
               onClick={() => removeAt(index)}
@@ -65,14 +65,14 @@ export function PhonemePicker({
           <span className="flex gap-1">
             <button
               type="button"
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium hover:bg-surface-muted"
+              className="ui-button ui-button-secondary min-h-10 px-3"
               onClick={() => onChange(phonemes.slice(0, -1))}
             >
               Backspace
             </button>
             <button
               type="button"
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium hover:bg-surface-muted"
+              className="ui-button ui-button-secondary min-h-10 px-3"
               onClick={() => onChange([])}
             >
               Clear
@@ -95,7 +95,7 @@ export function PhonemePicker({
               type="button"
               disabled={atLimit}
               className={[
-                "inline-flex min-h-11 min-w-11 flex-col items-center justify-center rounded-md border px-2 font-mono text-base transition-colors disabled:opacity-40",
+                "inline-flex min-h-11 min-w-11 flex-col items-center justify-center rounded-[var(--control-radius)] border px-2 font-mono text-base transition-colors disabled:opacity-40",
                 used
                   ? "border-accent bg-accent/10 text-accent"
                   : "border-border bg-surface hover:bg-surface-muted",

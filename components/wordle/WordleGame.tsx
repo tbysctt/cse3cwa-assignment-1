@@ -95,19 +95,19 @@ export function WordleGame({
           PHONEME&apos;LE
         </h3>
         <div
-          className="mt-2 inline-flex flex-wrap justify-center gap-2 text-xs text-absent"
+          className="mt-3 inline-flex flex-wrap justify-center gap-2 text-xs text-absent"
           aria-label="Activity settings"
         >
-          <span className="rounded-full border border-border bg-background px-2.5 py-1">
+          <span className="ui-chip">
             {maxAttempts} guesses
           </span>
-          <span className="rounded-full border border-border bg-background px-2.5 py-1">
+          <span className="ui-chip">
             {length} phonemes
           </span>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+      <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="min-w-0">
           <WordleGrid
             maxAttempts={maxAttempts}
@@ -128,7 +128,7 @@ export function WordleGame({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="flex-1 rounded-md bg-accent px-4 py-3 text-sm font-semibold uppercase tracking-wide text-accent-contrast transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="ui-button ui-button-primary flex-1 uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-50"
               onClick={submitGuess}
               disabled={locked}
             >
@@ -136,7 +136,7 @@ export function WordleGame({
             </button>
             <button
               type="button"
-              className="rounded-md border border-border bg-background px-4 py-3 text-sm font-medium hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+              className="ui-button ui-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
               onClick={deletePhoneme}
               disabled={locked}
             >
@@ -168,7 +168,7 @@ export function WordleGame({
         role="status"
         aria-live="polite"
         className={[
-          "mt-4 min-h-10 rounded-md px-3 py-2 text-sm font-semibold",
+          "mt-4 min-h-10 rounded-[var(--control-radius)] px-3 py-2 text-sm font-semibold",
           messageKind === "win"
             ? "border border-correct/50 bg-correct/10 text-correct"
             : messageKind === "lose"

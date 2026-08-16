@@ -15,7 +15,7 @@ export function WordleRow({
   columns: string;
 }) {
   return (
-    <div role="row" className="grid gap-1.5" style={{ gridTemplateColumns: columns }}>
+    <div role="row" className="grid gap-2" style={{ gridTemplateColumns: columns }}>
       {row.phonemes.map((phoneme, index) => (
         <WordleCell
           key={`${index}-${phoneme?.ipa ?? "empty"}`}

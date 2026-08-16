@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { HCE_WORDS_4, HCE_WORDS_5 } from "@/data/hce-corpus";
 import {
   HCE_KEYBOARD_ROWS,
@@ -13,7 +13,11 @@ import {
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
 import { escapeHtml, toJson } from "@/lib/html";
-import { cellsForPlacement, generateWordSearch } from "@/lib/word-search";
+import {
+  cellsForPlacement,
+  generateWordSearch,
+  INVALID_SELECTION_FLASH_MS,
+} from "@/lib/word-search";
 
 describe("HTML utilities", () => {
   it("escapes markup-sensitive text", () => {
@@ -187,17 +191,189 @@ describe("standalone activity generators", () => {
     });
     const dom = new JSDOM(html, { runScripts: "dangerously" });
     const placement = puzzle.placements[0];
-    for (const key of cellsForPlacement(placement)) {
+    const keys = cellsForPlacement(placement);
+    const first = dom.window.document.querySelector(
+      `[data-key="${keys[0]}"]`,
+    ) as HTMLButtonElement;
+    first.dispatchEvent(
+      new dom.window.PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    for (const key of keys.slice(1)) {
       (
         dom.window.document.querySelector(
           `[data-key="${key}"]`,
         ) as HTMLButtonElement
-      ).click();
+      ).dispatchEvent(
+        new dom.window.PointerEvent("pointerenter", {
+          bubbles: true,
+          button: 0,
+          pointerId: 1,
+        }),
+      );
     }
+    dom.window.document.dispatchEvent(
+      new dom.window.PointerEvent("pointerup", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
     expect(dom.window.document.getElementById("status")).toHaveTextContent(
       placement.word.english,
     );
     (dom.window.document.getElementById("reset") as HTMLButtonElement).click();
     expect(dom.window.document.getElementById("status")).toBeEmptyDOMElement();
+  });
+
+  it("flashes and clears invalid standalone Word Search selections", async () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const html = generateWordSearchHtml({
+      words: WORD_SEARCH_WORDS,
+      puzzle,
+      difficulty: "medium",
+      showHints: false,
+    });
+    const dom = new JSDOM(html, {
+      runScripts: "dangerously",
+      pretendToBeVisual: true,
+    });
+    const start = dom.window.document.querySelector(
+      '[data-key="0-0"]',
+    ) as HTMLButtonElement;
+    const mid = dom.window.document.querySelector(
+      '[data-key="0-1"]',
+    ) as HTMLButtonElement;
+    const offAxis = dom.window.document.querySelector(
+      '[data-key="2-1"]',
+    ) as HTMLButtonElement;
+
+    start.dispatchEvent(
+      new dom.window.PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    mid.dispatchEvent(
+      new dom.window.PointerEvent("pointerenter", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    offAxis.dispatchEvent(
+      new dom.window.PointerEvent("pointerenter", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    expect(offAxis.classList.contains("selected")).toBe(false);
+
+    dom.window.document.dispatchEvent(
+      new dom.window.PointerEvent("pointerup", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    expect(start.classList.contains("invalid")).toBe(true);
+    expect(mid.classList.contains("invalid")).toBe(true);
+    expect(dom.window.document.getElementById("status")).toBeEmptyDOMElement();
+
+    await vi.waitFor(
+      () => {
+        expect(start.classList.contains("selected")).toBe(false);
+        expect(start.classList.contains("invalid")).toBe(false);
+      },
+      { timeout: INVALID_SELECTION_FLASH_MS + 200 },
+    );
+  });
+
+  it("matches reverse standalone Word Search drags and handles pointercancel", async () => {
+    const puzzle = generateWordSearch(WORD_SEARCH_WORDS, 9, 42);
+    const html = generateWordSearchHtml({
+      words: WORD_SEARCH_WORDS,
+      puzzle,
+      difficulty: "medium",
+      showHints: false,
+    });
+    const dom = new JSDOM(html, {
+      runScripts: "dangerously",
+      pretendToBeVisual: true,
+    });
+    const keys = [...cellsForPlacement(puzzle.placements[0])].reverse();
+    const first = dom.window.document.querySelector(
+      `[data-key="${keys[0]}"]`,
+    ) as HTMLButtonElement;
+    first.dispatchEvent(
+      new dom.window.PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    for (const key of keys.slice(1)) {
+      (
+        dom.window.document.querySelector(
+          `[data-key="${key}"]`,
+        ) as HTMLButtonElement
+      ).dispatchEvent(
+        new dom.window.PointerEvent("pointerenter", {
+          bubbles: true,
+          button: 0,
+          pointerId: 1,
+        }),
+      );
+    }
+    dom.window.document.dispatchEvent(
+      new dom.window.PointerEvent("pointerup", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    expect(dom.window.document.getElementById("status")).toHaveTextContent(
+      puzzle.placements[0].word.english,
+    );
+
+    const start = dom.window.document.querySelector(
+      '[data-key="0-0"]',
+    ) as HTMLButtonElement;
+    const mid = dom.window.document.querySelector(
+      '[data-key="0-1"]',
+    ) as HTMLButtonElement;
+    start.dispatchEvent(
+      new dom.window.PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    mid.dispatchEvent(
+      new dom.window.PointerEvent("pointerenter", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    dom.window.document.dispatchEvent(
+      new dom.window.PointerEvent("pointercancel", {
+        bubbles: true,
+        button: 0,
+        pointerId: 1,
+      }),
+    );
+    expect(start.classList.contains("invalid")).toBe(true);
+    await vi.waitFor(
+      () => {
+        expect(start.classList.contains("selected")).toBe(false);
+      },
+      { timeout: INVALID_SELECTION_FLASH_MS + 200 },
+    );
   });
 });

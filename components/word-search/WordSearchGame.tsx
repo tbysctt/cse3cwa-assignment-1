@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import type { Phoneme, PhonemeWord } from "@/data/phonemes";
 import { formatIpa } from "@/data/phonemes";
 import {
+  INVALID_SELECTION_FLASH_MS,
+  cellsAlongSegment,
+  cellKey,
   matchSelection,
   type WordSearchPuzzle,
 } from "@/lib/word-search";
@@ -18,6 +21,7 @@ export function WordSearchGame({
   showHints: boolean;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
+  const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
   const [foundIds, setFoundIds] = useState<Set<string>>(new Set());
   const [foundCells, setFoundCells] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState("");
@@ -25,23 +29,51 @@ export function WordSearchGame({
   const foundIdsRef = useRef<Set<string>>(new Set());
   const pointerIntentRef = useRef(false);
   const draggingRef = useRef(false);
+  const anchorRef = useRef<string | null>(null);
   const selectionBeforePointerRef = useRef<string[]>([]);
-
-  function cellKey(row: number, col: number) {
-    return `${row}-${col}`;
-  }
+  const invalidTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const invalidGenerationRef = useRef(0);
 
   function setSelectedKeys(keys: string[]) {
     selectedRef.current = keys;
     setSelected(keys);
   }
 
-  function tryMatch(keys: string[]) {
+  function clearInvalidTimer() {
+    if (invalidTimerRef.current !== null) {
+      clearTimeout(invalidTimerRef.current);
+      invalidTimerRef.current = null;
+    }
+  }
+
+  function clearInvalidFeedback() {
+    clearInvalidTimer();
+    invalidGenerationRef.current += 1;
+    setInvalidKeys([]);
+  }
+
+  function flashInvalidSelection(keys: string[]) {
+    clearInvalidTimer();
+    const snapshot = [...keys];
+    const generation = invalidGenerationRef.current + 1;
+    invalidGenerationRef.current = generation;
+    setInvalidKeys(snapshot);
+    setSelectedKeys(snapshot);
+    invalidTimerRef.current = setTimeout(() => {
+      if (invalidGenerationRef.current !== generation) return;
+      setSelectedKeys([]);
+      setInvalidKeys([]);
+      invalidTimerRef.current = null;
+    }, INVALID_SELECTION_FLASH_MS);
+  }
+
+  function tryMatch(keys: string[]): boolean {
     const match = matchSelection(
       keys,
       puzzle.placements.filter((p) => !foundIdsRef.current.has(p.word.id)),
     );
-    if (!match) return;
+    if (!match) return false;
+    clearInvalidFeedback();
     const nextFound = new Set(foundIdsRef.current).add(match.word.id);
     foundIdsRef.current = nextFound;
     setFoundIds(nextFound);
@@ -56,39 +88,93 @@ export function WordSearchGame({
         ? "Well done — all phoneme words found!"
         : `Found “${match.word.english}”!`,
     );
+    return true;
+  }
+
+  function commitSelection(keys: string[]) {
+    if (keys.length === 0) return;
+    if (tryMatch(keys)) return;
+    if (keys.length === 1) {
+      // Single-cell taps may leave a pending selection for further clicks.
+      setSelectedKeys(keys);
+      return;
+    }
+    flashInvalidSelection(keys);
+  }
+
+  function selectSegmentTo(targetKey: string) {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+    const segment = cellsAlongSegment(anchor, targetKey);
+    if (!segment) return;
+    clearInvalidFeedback();
+    setSelectedKeys(segment);
   }
 
   function toggleCell(row: number, col: number) {
     const key = cellKey(row, col);
+    clearInvalidFeedback();
     const prev = selectedRef.current;
-    const next = prev.includes(key)
-      ? prev.filter((item) => item !== key)
-      : [...prev, key];
-    setSelectedKeys(next);
-    tryMatch(next);
-  }
 
-  function addWhileDragging(row: number, col: number) {
-    const key = cellKey(row, col);
-    if (selectedRef.current.includes(key)) return;
-    setSelectedKeys([...selectedRef.current, key]);
+    if (prev.length === 0) {
+      anchorRef.current = key;
+      setSelectedKeys([key]);
+      return;
+    }
+
+    const anchor = prev[0];
+    if (prev.length === 1 && prev[0] === key) {
+      anchorRef.current = null;
+      setSelectedKeys([]);
+      return;
+    }
+
+    const segment = cellsAlongSegment(anchor, key);
+    if (!segment) {
+      flashInvalidSelection(prev);
+      anchorRef.current = null;
+      return;
+    }
+
+    anchorRef.current = segment[0];
+    setSelectedKeys(segment);
+    commitSelection(segment);
   }
 
   useEffect(() => {
     function finishPointerSelection() {
       if (!draggingRef.current) return;
       draggingRef.current = false;
-      if (selectedRef.current.length === 1) {
-        const key = selectedRef.current[0];
+      const keys = selectedRef.current;
+
+      if (keys.length === 1) {
+        const key = keys[0];
         const previous = selectionBeforePointerRef.current;
         const next = previous.includes(key)
           ? previous.filter((item) => item !== key)
           : [...previous, key];
-        setSelectedKeys(next);
-        tryMatch(next);
-      } else {
-        tryMatch(selectedRef.current);
+        // Keep click-to-build geometry: a lone tap toggles against prior selection.
+        if (next.length <= 1) {
+          anchorRef.current = next[0] ?? null;
+          clearInvalidFeedback();
+          setSelectedKeys(next);
+          tryMatch(next);
+          return;
+        }
+        const built = cellsAlongSegment(next[0], next[next.length - 1]);
+        if (!built || built.length !== next.length || !built.every((k, i) => k === next[i])) {
+          // Prior multi-cell selection plus a tap that broke the line.
+          flashInvalidSelection(next);
+          anchorRef.current = null;
+          return;
+        }
+        anchorRef.current = built[0];
+        setSelectedKeys(built);
+        commitSelection(built);
+        return;
       }
+
+      commitSelection(keys);
     }
     document.addEventListener("pointerup", finishPointerSelection);
     document.addEventListener("pointercancel", finishPointerSelection);
@@ -96,13 +182,30 @@ export function WordSearchGame({
       document.removeEventListener("pointerup", finishPointerSelection);
       document.removeEventListener("pointercancel", finishPointerSelection);
     };
-  });
+    // Gesture refs keep this listener stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puzzle, words]);
+
+  useEffect(() => {
+    return () => {
+      clearInvalidTimer();
+    };
+  }, []);
 
   function reset() {
+    clearInvalidFeedback();
+    anchorRef.current = null;
     setSelectedKeys([]);
     foundIdsRef.current = new Set();
     setFoundIds(new Set());
     setFoundCells(new Set());
+    setMessage("");
+  }
+
+  function clearSelection() {
+    clearInvalidFeedback();
+    anchorRef.current = null;
+    setSelectedKeys([]);
     setMessage("");
   }
 
@@ -122,6 +225,7 @@ export function WordSearchGame({
             row.map((cell, colIndex) => {
               const key = cellKey(rowIndex, colIndex);
               const isSelected = selected.includes(key);
+              const isInvalid = invalidKeys.includes(key);
               const isFound = foundCells.has(key);
               const phoneme: Phoneme | null = cell;
               const hint = phoneme
@@ -131,16 +235,20 @@ export function WordSearchGame({
                 <button
                   key={key}
                   type="button"
+                  data-key={key}
+                  data-invalid={isInvalid ? "true" : undefined}
                   className={[
                     "relative flex min-h-12 flex-col items-center justify-center rounded-[var(--control-radius)] border font-mono text-sm transition-colors",
                     isFound
                       ? "border-correct bg-correct/20"
-                      : isSelected
-                        ? "border-accent bg-accent/20 shadow-[inset_0_0_0_2px_var(--accent)]"
-                        : "border-border bg-background hover:bg-surface-muted",
+                      : isInvalid
+                        ? "border-danger bg-danger/25 shadow-[inset_0_0_0_2px_var(--danger)] animate-pulse"
+                        : isSelected
+                          ? "border-accent bg-accent/20 shadow-[inset_0_0_0_2px_var(--accent)]"
+                          : "border-border bg-background hover:bg-surface-muted",
                     "touch-none",
                   ].join(" ")}
-                  aria-pressed={isSelected}
+                  aria-pressed={isSelected || isInvalid}
                   aria-label={[
                     showHints && hint
                       ? hint
@@ -148,6 +256,7 @@ export function WordSearchGame({
                         ? formatIpa(phoneme.ipa)
                         : "",
                     isFound ? "found" : "",
+                    isInvalid ? "not a match" : "",
                   ]
                     .filter(Boolean)
                     .join(", ")}
@@ -155,13 +264,16 @@ export function WordSearchGame({
                   onPointerDown={(event) => {
                     if (event.button !== 0) return;
                     event.preventDefault();
+                    clearInvalidFeedback();
                     pointerIntentRef.current = true;
                     draggingRef.current = true;
                     selectionBeforePointerRef.current = selectedRef.current;
+                    anchorRef.current = key;
                     setSelectedKeys([key]);
                   }}
                   onPointerEnter={() => {
-                    if (draggingRef.current) addWhileDragging(rowIndex, colIndex);
+                    if (!draggingRef.current) return;
+                    selectSegmentTo(key);
                   }}
                   onClick={() => {
                     if (pointerIntentRef.current) {
@@ -197,10 +309,7 @@ export function WordSearchGame({
           <button
             type="button"
             className="ui-button ui-button-secondary px-4 py-2"
-            onClick={() => {
-              setSelectedKeys([]);
-              setMessage("");
-            }}
+            onClick={clearSelection}
           >
             Clear selection
           </button>

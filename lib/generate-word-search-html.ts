@@ -6,6 +6,7 @@ import {
   DEFAULT_WORD_SEARCH_SEED,
   generateWordSearch,
   GRID_SIZE_BY_DIFFICULTY,
+  INVALID_SELECTION_FLASH_MS,
   validateWordSearchPuzzle,
   type WordSearchPuzzle,
 } from "@/lib/word-search";
@@ -66,7 +67,7 @@ export function generateWordSearchHtml(
 <style>
   :root {
     --bg: #f4f7f8; --fg: #1a2b32; --surface: #fff; --border: #c5d2d7;
-    --accent: #0f766e; --correct: #15803d; --selected: #99f6e4;
+    --accent: #0f766e; --correct: #15803d; --selected: #99f6e4; --danger: #b91c1c;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Noto Sans", system-ui, sans-serif; background: var(--bg); color: var(--fg); }
@@ -98,6 +99,15 @@ export function generateWordSearchHtml(
     background: var(--selected); border-color: var(--accent);
     box-shadow: inset 0 0 0 2px var(--accent);
   }
+  .cell.invalid {
+    background: #fecaca; border-color: var(--danger);
+    box-shadow: inset 0 0 0 2px var(--danger);
+    animation: invalid-pulse 0.35s ease;
+  }
+  @keyframes invalid-pulse {
+    from { transform: scale(0.97); }
+    to { transform: scale(1); }
+  }
   .cell.found {
     background: #bbf7d0; border-color: var(--correct); opacity: 0.9;
     box-shadow: inset 0 0 0 2px var(--correct);
@@ -116,7 +126,7 @@ export function generateWordSearchHtml(
   .list .eng { display: none; color: var(--correct); font-weight: 600; font-size: 0.85rem; }
   .list li.done .eng { display: block; }
   .status { margin-top: 1rem; font-weight: 600; min-height: 1.4rem; }
-  .actions { margin-top: 0.75rem; }
+  .actions { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .actions button {
     border: none; background: var(--accent); color: #fff; border-radius: 0.4rem;
     padding: 0.55rem 0.9rem; font-weight: 600; cursor: pointer;
@@ -126,7 +136,7 @@ export function generateWordSearchHtml(
 <body>
 <main>
   <h1>${escapeHtml(title)}</h1>
-  <p class="meta">Select a straight line of connected phoneme cells (tap or drag) that matches a word in the list. Hover or focus a cell for letter hints.</p>
+  <p class="meta">Select a straight horizontal, vertical, or diagonal line of connected phoneme cells (tap or drag) that matches a word in the list. Hover or focus a cell for letter hints.</p>
   <div class="settings" aria-label="Activity settings">
     <span>Difficulty: ${escapeHtml(difficulty)}</span>
     <span>${words.length} words</span>
@@ -152,17 +162,57 @@ export function generateWordSearchHtml(
   const words = ${wordsJson};
   const size = ${puzzle.size};
   const showHints = ${showHints ? "true" : "false"};
+  const flashMs = ${INVALID_SELECTION_FLASH_MS};
   const found = new Set();
   const foundCells = new Set();
   let selecting = false;
   let selected = [];
+  let invalid = [];
+  let anchor = null;
   let selectionBeforePointer = [];
   let suppressClick = false;
+  let invalidTimer = null;
+  let invalidGeneration = 0;
   const gridEl = document.getElementById("grid");
   const listEl = document.getElementById("list");
   const statusEl = document.getElementById("status");
 
   function key(r, c) { return r + "-" + c; }
+
+  function parseKey(value) {
+    const match = /^(\\d+)-(\\d+)$/.exec(value);
+    return match ? [Number(match[1]), Number(match[2])] : null;
+  }
+
+  function cellsAlongSegment(startKey, endKey) {
+    const start = parseKey(startKey);
+    const end = parseKey(endKey);
+    if (!start || !end) return null;
+    if (start[0] === end[0] && start[1] === end[1]) return [startKey];
+    const rowDelta = end[0] - start[0];
+    const colDelta = end[1] - start[1];
+    const rowStep = rowDelta === 0 ? 0 : (rowDelta > 0 ? 1 : -1);
+    const colStep = colDelta === 0 ? 0 : (colDelta > 0 ? 1 : -1);
+    const rowDistance = Math.abs(rowDelta);
+    const colDistance = Math.abs(colDelta);
+    const axis = (rowStep === 0 && colStep !== 0) || (colStep === 0 && rowStep !== 0);
+    const diagonal = rowStep !== 0 && colStep !== 0 && rowDistance === colDistance;
+    if (!axis && !diagonal) return null;
+    const steps = Math.max(rowDistance, colDistance);
+    const keys = [];
+    for (let index = 0; index <= steps; index++) {
+      keys.push(key(start[0] + rowStep * index, start[1] + colStep * index));
+    }
+    return keys;
+  }
+
+  function isStraightContiguous(keys) {
+    if (keys.length === 0 || new Set(keys).size !== keys.length) return false;
+    if (keys.length === 1) return parseKey(keys[0]) !== null;
+    const segment = cellsAlongSegment(keys[0], keys[keys.length - 1]);
+    return !!segment && segment.length === keys.length &&
+      segment.every((value, index) => value === keys[index]);
+  }
 
   function appendPhonemeContent(container, phoneme, includeHint) {
     const ipa = document.createElement("span");
@@ -199,53 +249,84 @@ export function generateWordSearchHtml(
   function updateSelectionClasses() {
     gridEl.querySelectorAll(".cell").forEach((el) => {
       const k = el.getAttribute("data-key");
-      el.classList.toggle("selected", selected.includes(k));
+      el.classList.toggle("selected", selected.includes(k) && !invalid.includes(k));
+      el.classList.toggle("invalid", invalid.includes(k));
       el.classList.toggle("found", foundCells.has(k));
+      if (invalid.includes(k)) el.setAttribute("aria-invalid", "true");
+      else el.removeAttribute("aria-invalid");
     });
   }
 
-  function tryMatch() {
-    if (!isStraightContiguous(selected)) return;
-    for (const w of words) {
-      if (found.has(w.id)) continue;
-      const forward = w.cells.every((c, index) => selected[index] === c);
-      const reverse = w.cells.every((c, index) => selected[w.cells.length - index - 1] === c);
-      if (w.cells.length === selected.length && (forward || reverse)) {
-        found.add(w.id);
-        w.cells.forEach((c) => foundCells.add(c));
-        selected = [];
-        statusEl.textContent = "Found \u201c" + w.english + "\u201d!";
-        renderList();
-        updateSelectionClasses();
-        if (found.size === words.length) {
-          statusEl.textContent = "Well done \u2014 all phoneme words found!";
-        }
-        return;
-      }
+  function clearInvalidTimer() {
+    if (invalidTimer !== null) {
+      clearTimeout(invalidTimer);
+      invalidTimer = null;
     }
   }
 
-  function isStraightContiguous(keys) {
-    if (keys.length === 0 || new Set(keys).size !== keys.length) return false;
-    const points = keys.map((value) => {
-      const match = /^(\\d+)-(\\d+)$/.exec(value);
-      return match ? [Number(match[1]), Number(match[2])] : null;
-    });
-    if (points.some((point) => point === null)) return false;
-    if (points.length === 1) return true;
-    const rowStep = points[1][0] - points[0][0];
-    const colStep = points[1][1] - points[0][1];
-    const unit = (Math.abs(rowStep) === 1 && colStep === 0) ||
-      (Math.abs(colStep) === 1 && rowStep === 0);
-    return unit && points.every((point, index) =>
-      point[0] === points[0][0] + rowStep * index &&
-      point[1] === points[0][1] + colStep * index
-    );
+  function clearInvalidFeedback() {
+    clearInvalidTimer();
+    invalidGeneration += 1;
+    invalid = [];
   }
 
-  function addCell(r, c) {
-    const k = key(r, c);
-    if (!selected.includes(k)) selected.push(k);
+  function flashInvalid(keys) {
+    clearInvalidTimer();
+    const snapshot = keys.slice();
+    invalidGeneration += 1;
+    const generation = invalidGeneration;
+    selected = snapshot;
+    invalid = snapshot;
+    updateSelectionClasses();
+    invalidTimer = setTimeout(() => {
+      if (generation !== invalidGeneration) return;
+      selected = [];
+      invalid = [];
+      invalidTimer = null;
+      updateSelectionClasses();
+    }, flashMs);
+  }
+
+  function tryMatch(keys) {
+    if (!isStraightContiguous(keys)) return false;
+    for (const w of words) {
+      if (found.has(w.id)) continue;
+      const forward = w.cells.every((c, index) => keys[index] === c);
+      const reverse = w.cells.every((c, index) => keys[w.cells.length - index - 1] === c);
+      if (w.cells.length === keys.length && (forward || reverse)) {
+        found.add(w.id);
+        w.cells.forEach((c) => foundCells.add(c));
+        selected = [];
+        invalid = [];
+        statusEl.textContent = "Found \\u201c" + w.english + "\\u201d!";
+        renderList();
+        updateSelectionClasses();
+        if (found.size === words.length) {
+          statusEl.textContent = "Well done \\u2014 all phoneme words found!";
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function commitSelection(keys) {
+    if (keys.length === 0) return;
+    if (tryMatch(keys)) return;
+    if (keys.length === 1) {
+      selected = keys.slice();
+      updateSelectionClasses();
+      return;
+    }
+    flashInvalid(keys);
+  }
+
+  function selectSegmentTo(targetKey) {
+    if (!anchor) return;
+    const segment = cellsAlongSegment(anchor, targetKey);
+    if (!segment) return;
+    clearInvalidFeedback();
+    selected = segment;
     updateSelectionClasses();
   }
 
@@ -267,50 +348,100 @@ export function generateWordSearchHtml(
       btn.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
+        clearInvalidFeedback();
         suppressClick = true;
         selecting = true;
         selectionBeforePointer = selected.slice();
-        selected = [key(r, c)];
+        anchor = key(r, c);
+        selected = [anchor];
         updateSelectionClasses();
       });
-      btn.addEventListener("pointerenter", () => { if (selecting) addCell(r, c); });
+      btn.addEventListener("pointerenter", () => {
+        if (selecting) selectSegmentTo(key(r, c));
+      });
       btn.addEventListener("click", () => {
         if (suppressClick) {
           suppressClick = false;
           return;
         }
-        if (!selecting) {
-          if (selected.includes(key(r, c))) selected = selected.filter((x) => x !== key(r, c));
-          else selected.push(key(r, c));
+        if (selecting) return;
+        clearInvalidFeedback();
+        const clicked = key(r, c);
+        if (selected.length === 0) {
+          anchor = clicked;
+          selected = [clicked];
           updateSelectionClasses();
-          tryMatch();
+          return;
         }
+        if (selected.length === 1 && selected[0] === clicked) {
+          anchor = null;
+          selected = [];
+          updateSelectionClasses();
+          return;
+        }
+        const segment = cellsAlongSegment(selected[0], clicked);
+        if (!segment) {
+          flashInvalid(selected.slice());
+          anchor = null;
+          return;
+        }
+        anchor = segment[0];
+        selected = segment;
+        updateSelectionClasses();
+        commitSelection(segment);
       });
       gridEl.appendChild(btn);
     }
   }
 
-  document.addEventListener("pointerup", () => {
+  function finishPointerSelection() {
     if (!selecting) return;
     selecting = false;
-    if (selected.length === 1) {
-      const selectedKey = selected[0];
-      selected = selectionBeforePointer.includes(selectedKey)
+    const keys = selected.slice();
+    if (keys.length === 1) {
+      const selectedKey = keys[0];
+      const next = selectionBeforePointer.includes(selectedKey)
         ? selectionBeforePointer.filter((value) => value !== selectedKey)
         : selectionBeforePointer.concat(selectedKey);
+      if (next.length <= 1) {
+        anchor = next[0] || null;
+        clearInvalidFeedback();
+        selected = next;
+        updateSelectionClasses();
+        tryMatch(next);
+        return;
+      }
+      const built = cellsAlongSegment(next[0], next[next.length - 1]);
+      if (!built || built.length !== next.length ||
+          !built.every((value, index) => value === next[index])) {
+        flashInvalid(next);
+        anchor = null;
+        return;
+      }
+      anchor = built[0];
+      selected = built;
       updateSelectionClasses();
+      commitSelection(built);
+      return;
     }
-    tryMatch();
-  });
+    commitSelection(keys);
+  }
+
+  document.addEventListener("pointerup", finishPointerSelection);
+  document.addEventListener("pointercancel", finishPointerSelection);
   document.getElementById("clear").addEventListener("click", () => {
+    clearInvalidFeedback();
     selected = [];
+    anchor = null;
     updateSelectionClasses();
     statusEl.textContent = "";
   });
   document.getElementById("reset").addEventListener("click", () => {
+    clearInvalidFeedback();
     found.clear();
     foundCells.clear();
     selected = [];
+    anchor = null;
     statusEl.textContent = "";
     renderList();
     updateSelectionClasses();

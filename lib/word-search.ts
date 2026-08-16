@@ -5,10 +5,26 @@ import {
 } from "@/data/phonemes";
 import type { Difficulty } from "@/lib/activity";
 
-export type Direction = "H" | "V";
+/** Placement directions. Reverse selection covers the opposite four rays. */
+export type Direction = "H" | "V" | "DR" | "DL";
+
+export const DIRECTION_STEPS: Record<Direction, readonly [number, number]> = {
+  H: [0, 1],
+  V: [1, 0],
+  DR: [1, 1],
+  DL: [1, -1],
+};
+
+export const PLACEMENT_DIRECTIONS: readonly Direction[] = [
+  "H",
+  "V",
+  "DR",
+  "DL",
+];
 
 export const DEFAULT_WORD_SEARCH_SEED = 42;
 export const REQUIRED_WORD_COUNT = 5;
+export const INVALID_SELECTION_FLASH_MS = 350;
 export const GRID_SIZE_BY_DIFFICULTY: Record<Difficulty, number> = {
   easy: 8,
   medium: 9,
@@ -45,6 +61,78 @@ export type WordSearchPuzzle = {
   placements: PlacedWord[];
 };
 
+export type CellCoord = {
+  row: number;
+  col: number;
+};
+
+export function cellKey(row: number, col: number): string {
+  return `${row}-${col}`;
+}
+
+export function parseCellKey(key: string): CellCoord | null {
+  const match = /^(\d+)-(\d+)$/.exec(key);
+  if (!match) return null;
+  return { row: Number(match[1]), col: Number(match[2]) };
+}
+
+function stepSign(value: number): number {
+  if (value === 0) return 0;
+  return value > 0 ? 1 : -1;
+}
+
+/**
+ * Returns every connected cell from start to end inclusive when the segment is
+ * horizontal, vertical, or a 45-degree diagonal. Otherwise returns null.
+ */
+export function cellsAlongSegment(
+  startKey: string,
+  endKey: string,
+): string[] | null {
+  const start = parseCellKey(startKey);
+  const end = parseCellKey(endKey);
+  if (!start || !end) return null;
+  if (start.row === end.row && start.col === end.col) return [startKey];
+
+  const rowDelta = end.row - start.row;
+  const colDelta = end.col - start.col;
+  const rowStep = stepSign(rowDelta);
+  const colStep = stepSign(colDelta);
+  const rowDistance = Math.abs(rowDelta);
+  const colDistance = Math.abs(colDelta);
+
+  const isAxisAligned =
+    (rowStep === 0 && colStep !== 0) || (colStep === 0 && rowStep !== 0);
+  const isDiagonal = rowStep !== 0 && colStep !== 0 && rowDistance === colDistance;
+  if (!isAxisAligned && !isDiagonal) return null;
+
+  const steps = Math.max(rowDistance, colDistance);
+  const keys: string[] = [];
+  for (let index = 0; index <= steps; index += 1) {
+    keys.push(
+      cellKey(start.row + rowStep * index, start.col + colStep * index),
+    );
+  }
+  return keys;
+}
+
+export function isStraightContiguousSelection(keys: string[]): boolean {
+  if (keys.length === 0 || new Set(keys).size !== keys.length) return false;
+  if (keys.length === 1) return parseCellKey(keys[0]) !== null;
+  const segment = cellsAlongSegment(keys[0], keys[keys.length - 1]);
+  if (!segment || segment.length !== keys.length) return false;
+  return segment.every((key, index) => key === keys[index]);
+}
+
+/** True when appending nextKey keeps the selection a straight contiguous line. */
+export function wouldExtendStraightSelection(
+  keys: string[],
+  nextKey: string,
+): boolean {
+  if (keys.includes(nextKey)) return false;
+  return isStraightContiguousSelection([...keys, nextKey]);
+}
+
 function emptyGrid(size: number): (Phoneme | null)[][] {
   return Array.from({ length: size }, () =>
     Array.from({ length: size }, () => null),
@@ -59,9 +147,10 @@ function canPlace(
   direction: Direction,
 ): boolean {
   const size = grid.length;
+  const [rowStep, colStep] = DIRECTION_STEPS[direction];
   for (let i = 0; i < phonemes.length; i += 1) {
-    const r = direction === "V" ? row + i : row;
-    const c = direction === "H" ? col + i : col;
+    const r = row + rowStep * i;
+    const c = col + colStep * i;
     if (r < 0 || c < 0 || r >= size || c >= size) return false;
     const existing = grid[r][c];
     if (existing && existing.ipa !== phonemes[i].ipa) return false;
@@ -76,9 +165,10 @@ function place(
   col: number,
   direction: Direction,
 ) {
+  const [rowStep, colStep] = DIRECTION_STEPS[direction];
   for (let i = 0; i < phonemes.length; i += 1) {
-    const r = direction === "V" ? row + i : row;
-    const c = direction === "H" ? col + i : col;
+    const r = row + rowStep * i;
+    const c = col + colStep * i;
     grid[r][c] = phonemes[i];
   }
 }
@@ -149,7 +239,7 @@ export function generateWordSearch(
       col: number;
       direction: Direction;
     }> = [];
-    for (const direction of ["H", "V"] as const) {
+    for (const direction of PLACEMENT_DIRECTIONS) {
       for (let row = 0; row < size; row += 1) {
         for (let col = 0; col < size; col += 1) {
           if (canPlace(grid, word.phonemes, row, col, direction)) {
@@ -182,11 +272,15 @@ export function generateWordSearch(
 }
 
 export function cellsForPlacement(placement: PlacedWord): string[] {
+  const [rowStep, colStep] = DIRECTION_STEPS[placement.direction];
   const keys: string[] = [];
   for (let i = 0; i < placement.word.phonemes.length; i += 1) {
-    const r = placement.direction === "V" ? placement.row + i : placement.row;
-    const c = placement.direction === "H" ? placement.col + i : placement.col;
-    keys.push(`${r}-${c}`);
+    keys.push(
+      cellKey(
+        placement.row + rowStep * i,
+        placement.col + colStep * i,
+      ),
+    );
   }
   return keys;
 }
@@ -220,13 +314,15 @@ export function validateWordSearchPuzzle(
     const placement = matches[0];
     const cells = cellsForPlacement(placement);
     const valid = cells.every((key, index) => {
-      const [row, col] = key.split("-").map(Number);
+      const coordinate = parseCellKey(key);
       return (
-        row >= 0 &&
-        col >= 0 &&
-        row < puzzle.size &&
-        col < puzzle.size &&
-        puzzle.grid[row][col]?.ipa === word.phonemes[index].ipa
+        coordinate !== null &&
+        coordinate.row >= 0 &&
+        coordinate.col >= 0 &&
+        coordinate.row < puzzle.size &&
+        coordinate.col < puzzle.size &&
+        puzzle.grid[coordinate.row][coordinate.col]?.ipa ===
+          word.phonemes[index].ipa
       );
     });
     if (!valid) {
@@ -254,27 +350,4 @@ export function matchSelection(
     }
   }
   return null;
-}
-
-export function isStraightContiguousSelection(keys: string[]): boolean {
-  if (keys.length === 0 || new Set(keys).size !== keys.length) return false;
-  const coordinates = keys.map((key) => {
-    const match = /^(\d+)-(\d+)$/.exec(key);
-    return match ? [Number(match[1]), Number(match[2])] as const : null;
-  });
-  if (coordinates.some((coordinate) => coordinate === null)) return false;
-
-  const points = coordinates as ReadonlyArray<readonly [number, number]>;
-  if (points.length === 1) return true;
-  const rowStep = points[1][0] - points[0][0];
-  const colStep = points[1][1] - points[0][1];
-  const isUnitStep =
-    (Math.abs(rowStep) === 1 && colStep === 0) ||
-    (Math.abs(colStep) === 1 && rowStep === 0);
-  if (!isUnitStep) return false;
-  return points.every(
-    ([row, col], index) =>
-      row === points[0][0] + rowStep * index &&
-      col === points[0][1] + colStep * index,
-  );
 }

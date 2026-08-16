@@ -45,7 +45,7 @@ export function WordleActivityPreview({
         />
       ) : (
         <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-          Add a phoneme target and English answer to preview the activity.
+          Select a corpus word to preview the activity.
         </p>
       )}
     </ActivityPreviewShell>

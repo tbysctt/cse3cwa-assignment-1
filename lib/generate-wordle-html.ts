@@ -1,4 +1,5 @@
 import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import { HCE_KEYBOARD_ROWS } from "@/data/hce-keyboard";
 import type { Difficulty } from "@/lib/activity";
 import { escapeHtml, toJson } from "@/lib/html";
 import {
@@ -38,6 +39,7 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     english: target.english,
     target: target.phonemes,
     inventory,
+    keyboardRows: HCE_KEYBOARD_ROWS,
     maxAttempts,
     length,
     showHints,
@@ -61,16 +63,17 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     margin: 0; font-family: "Noto Sans", system-ui, sans-serif;
     background: var(--bg); color: var(--fg); line-height: 1.5;
   }
-  main { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
-  h1 { font-size: 1.5rem; letter-spacing: 0.04em; margin: 0 0 0.5rem; }
-  .meta { color: #64748b; font-size: 0.95rem; margin-bottom: 1.25rem; }
+  main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.5rem; letter-spacing: 0.04em; margin: 0 0 0.5rem; text-align: center; }
+  .meta { color: #64748b; font-size: 0.95rem; margin-bottom: 1.25rem; text-align: center; }
   .settings {
     display: inline-flex; flex-wrap: wrap; gap: 0.4rem 0.9rem;
-    margin-bottom: 1.25rem; font-size: 0.85rem; color: #64748b;
+    margin: 0 auto 1.25rem; font-size: 0.85rem; color: #64748b;
+    justify-content: center; width: 100%;
   }
   .settings span { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 0.2rem 0.6rem; }
   .legend {
-    display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;
+    display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0;
     font-size: 0.8rem; color: #64748b;
   }
   .legend .swatch { display: inline-flex; align-items: center; gap: 0.3rem; }
@@ -80,7 +83,13 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
   .legend .dot-correct { background: var(--correct); }
   .legend .dot-present { background: var(--present); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0 2px, transparent 2px 4px); }
   .legend .dot-absent { background: var(--absent); opacity: 0.45; }
-  .board { display: grid; gap: 0.4rem; margin-bottom: 1.25rem; }
+  .layout {
+    display: grid; gap: 1.5rem; align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .layout { grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); }
+  }
+  .board { display: grid; gap: 0.4rem; }
   .row {
     display: grid; gap: 0.4rem;
     grid-template-columns: repeat(${length}, minmax(2.5rem, 1fr));
@@ -100,15 +109,19 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
   .tile.pending { animation: pop 0.12s ease; }
   @keyframes pop { from { transform: scale(0.9); } to { transform: scale(1); } }
   .tile.correct .g, .tile.present .g, .tile.absent .g { color: rgba(255,255,255,0.85); }
-  .keyboard { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+  .side { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+  .keyboard { display: flex; flex-direction: column; gap: 0.35rem; }
+  .key-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.35rem; }
+  .key-blank { min-height: 2.75rem; }
   button.key {
-    min-width: 3rem; min-height: 3rem; border: 1px solid var(--border); border-radius: 0.4rem;
+    min-width: 0; min-height: 2.75rem; border: 1px solid var(--border); border-radius: 0.4rem;
     background: var(--surface); cursor: pointer; font-family: ui-monospace, monospace; position: relative;
+    padding: 0.2rem;
   }
   button.key:hover, button.key:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   button.key:active { transform: translateY(1px); }
   button.key:disabled { opacity: 0.4; cursor: default; }
-  button.key .g { display: block; font-size: 0.65rem; font-family: system-ui, sans-serif; color: #64748b; }
+  button.key .g { display: block; font-size: 0.6rem; font-family: system-ui, sans-serif; color: #64748b; }
   .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .actions button {
     border: none; border-radius: 0.4rem; padding: 0.65rem 1rem; font-weight: 600; cursor: pointer;
@@ -131,22 +144,26 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
 <body>
 <main>
   <h1>${escapeHtml(title)}</h1>
-  <p class="meta">Guess the phoneme sequence using the keyboard below. Feedback is shown with colour <em>and</em> pattern.</p>
+  <p class="meta">Guess the phoneme sequence using the keyboard. Feedback is shown with colour <em>and</em> pattern.</p>
   <div class="settings" aria-label="Activity settings">
     <span>Difficulty: ${escapeHtml(difficulty)}</span>
     <span>Guesses: ${maxAttempts}</span>
     <span>${target.phonemes.length} phonemes</span>
   </div>
+  <div class="layout">
+    <div id="board" class="board" role="grid" aria-label="Phoneme Wordle board" aria-rowcount="${maxAttempts}"></div>
+    <div class="side">
+      <div id="keyboard" class="keyboard" role="group" aria-label="Phoneme keyboard"></div>
+      <div class="actions">
+        <button type="button" class="enter" id="enter">Enter</button>
+        <button type="button" class="delete" id="delete">Delete</button>
+      </div>
+    </div>
+  </div>
   <div class="legend" aria-hidden="true">
     <span class="swatch"><span class="dot dot-correct"></span> correct</span>
     <span class="swatch"><span class="dot dot-present"></span> wrong position</span>
     <span class="swatch"><span class="dot dot-absent"></span> not present</span>
-  </div>
-  <div id="board" class="board" aria-label="Phoneme Wordle board"></div>
-  <div id="keyboard" class="keyboard" aria-label="Phoneme keyboard"></div>
-  <div class="actions">
-    <button type="button" class="enter" id="enter">Enter</button>
-    <button type="button" class="delete" id="delete">Delete</button>
   </div>
   <p id="status" class="status" role="status" aria-live="polite"></p>
 </main>
@@ -155,6 +172,7 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
   const data = ${dataJson};
   const target = data.target;
   const inventory = data.inventory;
+  const keyboardRows = data.keyboardRows;
   const maxAttempts = data.maxAttempts;
   const length = data.length;
   const showHints = data.showHints;
@@ -167,6 +185,8 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
   const board = document.getElementById("board");
   const keyboard = document.getElementById("keyboard");
   const statusEl = document.getElementById("status");
+  const allowed = new Set(inventory.map((p) => p.ipa));
+  const byIpa = new Map(inventory.map((p) => [p.ipa, p]));
 
   function hint(p) {
     return "/" + p.ipa + "/ → " + p.grapheme + " (" + p.example + ")";
@@ -212,9 +232,13 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     for (let r = 0; r < maxAttempts; r++) {
       const rowEl = document.createElement("div");
       rowEl.className = "row";
+      rowEl.setAttribute("role", "row");
+      rowEl.setAttribute("aria-rowindex", String(r + 1));
       for (let c = 0; c < length; c++) {
         const tile = document.createElement("div");
         tile.className = "tile";
+        tile.setAttribute("role", "gridcell");
+        tile.setAttribute("aria-colindex", String(c + 1));
         const phoneme = guesses[r][c];
         const status = results[r][c];
         if (status) tile.classList.add(status);
@@ -226,6 +250,8 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
           appendPhonemeContent(tile, phoneme, showHints);
           const label = "/" + phoneme.ipa + "/" + (status ? " — " + statusLabel(status) : "");
           tile.setAttribute("aria-label", label);
+        } else {
+          tile.setAttribute("aria-label", "Empty phoneme slot");
         }
         rowEl.appendChild(tile);
       }
@@ -239,25 +265,67 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     return "not in the word";
   }
 
-  inventory.forEach((p) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "key";
-    if (showHints) {
-      btn.title = hint(p);
-      btn.setAttribute("aria-label", hint(p));
-    } else {
-      btn.setAttribute("aria-label", "/" + p.ipa + "/");
-    }
-    appendPhonemeContent(btn, p, showHints);
-    btn.addEventListener("click", () => {
-      if (locked || col >= length) return;
-      guesses[row][col] = p;
-      col += 1;
-      render();
+  keyboardRows.forEach((rowSlots, rowIndex) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "key-row";
+    rowSlots.forEach((slot, slotIndex) => {
+      if (!slot || !allowed.has(slot.ipa)) {
+        const blank = document.createElement("span");
+        blank.className = "key-blank";
+        blank.setAttribute("aria-hidden", "true");
+        rowEl.appendChild(blank);
+        return;
+      }
+      const p = byIpa.get(slot.ipa) || slot;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "key";
+      if (showHints) {
+        btn.title = hint(p);
+        btn.setAttribute("aria-label", hint(p));
+      } else {
+        btn.setAttribute("aria-label", "/" + p.ipa + "/");
+      }
+      appendPhonemeContent(btn, p, showHints);
+      btn.addEventListener("click", () => {
+        if (locked || col >= length) return;
+        guesses[row][col] = p;
+        col += 1;
+        render();
+      });
+      rowEl.appendChild(btn);
     });
-    keyboard.appendChild(btn);
+    keyboard.appendChild(rowEl);
   });
+
+  const drawn = new Set(
+    keyboardRows.flat().filter(Boolean).map((slot) => slot.ipa),
+  );
+  const extras = inventory.filter((p) => !drawn.has(p.ipa));
+  if (extras.length > 0) {
+    const rowEl = document.createElement("div");
+    rowEl.className = "key-row";
+    extras.forEach((p) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "key";
+      if (showHints) {
+        btn.title = hint(p);
+        btn.setAttribute("aria-label", hint(p));
+      } else {
+        btn.setAttribute("aria-label", "/" + p.ipa + "/");
+      }
+      appendPhonemeContent(btn, p, showHints);
+      btn.addEventListener("click", () => {
+        if (locked || col >= length) return;
+        guesses[row][col] = p;
+        col += 1;
+        render();
+      });
+      rowEl.appendChild(btn);
+    });
+    keyboard.appendChild(rowEl);
+  }
 
   document.getElementById("delete").addEventListener("click", () => {
     if (locked || col === 0) return;
@@ -297,11 +365,20 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     statusEl.textContent = "";
   }
 
+  function isEditable(target) {
+    if (!target || !target.tagName) return false;
+    if (target.isContentEditable) return true;
+    const tag = target.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+  }
+
   document.addEventListener("keydown", (event) => {
+    if (isEditable(event.target)) return;
     if (event.key === "Enter") {
       event.preventDefault();
       submit();
     } else if (event.key === "Backspace") {
+      event.preventDefault();
       document.getElementById("delete").click();
     }
   });

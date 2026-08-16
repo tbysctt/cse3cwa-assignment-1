@@ -36,10 +36,10 @@ export default function AboutPage() {
         <article className="ui-surface p-5">
           <h2 className="text-lg font-semibold">Phoneme Wordle tool</h2>
           <p className="mt-2 text-sm leading-relaxed text-absent">
-            Builds a Wordle-style activity from a phoneme word and its English
-            equivalent. Players guess IPA sequences; feedback uses colour and
-            pattern, and hover hints map symbols such as /θ/ to letter patterns
-            like TH (as in thin).
+            Builds a Wordle-style activity from the HCE phoneme corpus. Teachers
+            choose a 3-, 4-, or 5-phoneme word; players guess IPA sequences with
+            colour and pattern feedback, and hover hints map symbols such as /θ/
+            to letter patterns like TH (as in thin).
           </p>
         </article>
         <article className="ui-surface p-5">
@@ -76,8 +76,8 @@ export default function AboutPage() {
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
           <li>Open Wordle or Word Search from the navigation bar.</li>
           <li>
-            Configure the phoneme word(s), English answers, hints, difficulty
-            and guess count.
+            For Wordle, choose a phoneme length and an HCE corpus word; for Word
+            Search, edit the word list. Adjust hints, difficulty and guess count.
           </li>
           <li>Try the live preview exactly as a student would play it.</li>
           <li>

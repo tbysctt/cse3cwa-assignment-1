@@ -15,6 +15,7 @@ export function PhonemeKey({
   return (
     <PhonemeGlyph
       as="button"
+      className="w-full min-w-0 flex-col text-sm"
       phoneme={phoneme}
       showGrapheme={showHint}
       showHint={showHint}

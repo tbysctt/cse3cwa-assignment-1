@@ -31,6 +31,15 @@ describe("Wordle rules", () => {
     ).toEqual(["correct", "absent", "correct"]);
   });
 
+  it("scores compound IPA phonemes as atomic symbols", () => {
+    expect(
+      evaluateGuess(
+        ["tʃ", "æɪ", "n"].map(phoneme),
+        word("tʃ", "ɪ", "n"),
+      ),
+    ).toEqual(["correct", "absent", "correct"]);
+  });
+
   it("treats missing guess slots as absent", () => {
     expect(evaluateGuess([phoneme("a")], word("a", "b"))).toEqual([
       "correct",

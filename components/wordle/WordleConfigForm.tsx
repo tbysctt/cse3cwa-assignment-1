@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { PhonemePicker } from "@/components/phoneme/PhonemePicker";
 import { Field } from "@/components/shared/Field";
 import { HintToggle } from "@/components/shared/HintToggle";
 import { SectionCard } from "@/components/shared/SectionCard";
-import type { Phoneme } from "@/data/phonemes";
+import {
+  phonemeWordDisplay,
+  type PhonemeLength,
+  type PhonemeWord,
+} from "@/data/phonemes";
+import { PHONEME_LENGTHS } from "@/data/hce-corpus";
 import {
   DIFFICULTY_OPTIONS,
   type Difficulty,
@@ -19,31 +23,31 @@ const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export function WordleConfigForm({
-  target,
-  onTargetChange,
-  english,
-  onEnglishChange,
+  length,
+  onLengthChange,
+  wordId,
+  onWordIdChange,
+  lengthWords,
   showHints,
   onShowHintsChange,
   maxAttempts,
   onMaxAttemptsChange,
   difficulty,
   onDifficultyChange,
-  inventory,
   canGenerate,
   onGenerate,
 }: {
-  target: Phoneme[];
-  onTargetChange: (next: Phoneme[]) => void;
-  english: string;
-  onEnglishChange: (next: string) => void;
+  length: PhonemeLength;
+  onLengthChange: (next: PhonemeLength) => void;
+  wordId: string;
+  onWordIdChange: (next: string) => void;
+  lengthWords: PhonemeWord[];
   showHints: boolean;
   onShowHintsChange: (next: boolean) => void;
   maxAttempts: number;
   onMaxAttemptsChange: (next: number) => void;
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
-  inventory: Phoneme[];
   canGenerate: boolean;
   onGenerate: () => void;
 }) {
@@ -54,6 +58,8 @@ export function WordleConfigForm({
     setPreviousMaxAttempts(maxAttempts);
     setAttemptsDraft(String(maxAttempts));
   }
+
+  const selected = lengthWords.find((entry) => entry.id === wordId) ?? lengthWords[0];
 
   function commitAttempts() {
     const parsed = Number.parseInt(attemptsDraft, 10);
@@ -72,43 +78,63 @@ export function WordleConfigForm({
   return (
     <SectionCard
       title="Configure activity"
-      description="Set the phoneme word, English answer, hints, difficulty and guess count. The live preview updates as you go."
+      description="Choose a phoneme length and an HCE corpus word. The live preview updates as you go."
     >
       <div className="flex flex-col gap-5">
-        <fieldset>
-          <legend className="text-sm font-semibold text-foreground">
-            Phoneme Word
-          </legend>
-          <p className="mt-0.5 text-xs text-absent">
-            The phonetic version students must guess, e.g. /θɪn/. Build it from
-            the keys below — no typing of IPA symbols required.
-          </p>
-          <div className="mt-2">
-            <PhonemePicker
-              label="Target"
-              phonemes={target}
-              inventory={inventory}
-              onChange={onTargetChange}
-            />
-          </div>
-        </fieldset>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label="Phoneme length"
+            hint="Each corpus word has 3, 4, or 5 phonemes. Students guess that many cells."
+          >
+            {(id) => (
+              <select
+                id={id}
+                className={inputClass}
+                value={length}
+                onChange={(event) =>
+                  onLengthChange(Number(event.target.value) as PhonemeLength)
+                }
+              >
+                {PHONEME_LENGTHS.map((value) => (
+                  <option key={value} value={value}>
+                    {value} phonemes
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
 
-        <Field
-          label="English Word"
-          hint="The normal English equivalent, kept secret until the student completes the activity, e.g. thin."
-        >
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              type="text"
-              value={english}
-              onChange={(event) => onEnglishChange(event.target.value)}
-              placeholder="e.g. thin"
-              autoComplete="off"
-            />
-          )}
-        </Field>
+          <Field
+            label="Corpus word"
+            hint="Select one of the 30 approved HCE words for this length."
+          >
+            {(id) => (
+              <select
+                id={id}
+                className={inputClass}
+                value={selected?.id ?? ""}
+                onChange={(event) => onWordIdChange(event.target.value)}
+              >
+                {lengthWords.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.english}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+
+        {selected ? (
+          <div className="rounded-[var(--control-radius)] border border-border bg-surface-muted px-3 py-2 text-sm">
+            <p className="font-semibold text-foreground">
+              Target: {phonemeWordDisplay(selected)}
+            </p>
+            <p className="mt-1 text-xs text-absent">
+              English answer (revealed on win/loss): {selected.english}
+            </p>
+          </div>
+        ) : null}
 
         <HintToggle
           value={showHints}
@@ -169,7 +195,7 @@ export function WordleConfigForm({
             title={
               canGenerate
                 ? "Download the activity as a standalone HTML file"
-                : "Add a phoneme word and English word first"
+                : "Select a corpus word first"
             }
           >
             Generate HTML

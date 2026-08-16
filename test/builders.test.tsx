@@ -14,21 +14,35 @@ describe("activity builders", () => {
     vi.mocked(downloadTextFile).mockClear();
   });
 
-  it("downloads a valid Wordle and disables generation for a blank answer", async () => {
+  it("downloads a valid Wordle from the HCE corpus", async () => {
     const user = userEvent.setup();
     render(<WordleBuilder />);
     const generate = screen.getByRole("button", { name: "Generate HTML" });
+
+    expect(screen.getByRole("combobox", { name: "Phoneme length" })).toHaveValue(
+      "3",
+    );
+    expect(screen.getByRole("combobox", { name: "Corpus word" })).toHaveValue(
+      "thin",
+    );
+    expect(screen.getByText(/\/θ\/ \/ɪ\/ \/n\//)).toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Phoneme length" }),
+      "5",
+    );
+    expect(screen.getByRole("combobox", { name: "Corpus word" })).toHaveValue(
+      "stamp",
+    );
 
     await user.click(generate);
     expect(downloadTextFile).toHaveBeenCalledWith(
       "phoneme-wordle.html",
       expect.stringContaining("<!DOCTYPE html>"),
     );
-
-    const english = screen.getByRole("textbox", { name: "English Word" });
-    await user.clear(english);
-    expect(generate).toBeDisabled();
-    expect(screen.getByText(/add a phoneme target and English answer/i)).toBeInTheDocument();
+    const html = vi.mocked(downloadTextFile).mock.calls[0][1] as string;
+    expect(html).toContain("stamp");
+    expect(html).toContain("key-row");
   });
 
   it("downloads a valid Word Search and disables generation for incomplete rows", async () => {

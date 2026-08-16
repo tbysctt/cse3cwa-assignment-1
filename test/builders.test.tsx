@@ -56,19 +56,27 @@ describe("activity builders", () => {
     expect(html).toContain(`Guesses: ${DIFFICULTY_PRESETS.hard.maxAttempts}`);
   });
 
-  it("downloads a Word Search from the fixed five-word list", async () => {
+  it("lets teachers pick five HCE corpus words for Word Search", async () => {
     const user = userEvent.setup();
     render(<WordSearchBuilder />);
     const generate = screen.getByRole("button", { name: "Generate HTML" });
 
     expect(
-      screen.getByRole("list", { name: "Fixed word search list" }),
+      screen.getByRole("list", { name: "Word search corpus picks" }),
     ).toBeInTheDocument();
-    for (const word of WORD_SEARCH_WORDS) {
-      expect(screen.getByText(word.english)).toBeInTheDocument();
+    for (const [index, word] of WORD_SEARCH_WORDS.entries()) {
+      expect(
+        screen.getByRole("combobox", { name: `Word ${index + 1}` }),
+      ).toHaveValue(word.id);
     }
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.getByText(/9×9 grid, hints on/i)).toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Word 1" }),
+      "bed",
+    );
+    expect(screen.getByText(/\/b\/ \/e\/ \/d\//)).toBeInTheDocument();
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Difficulty" }),
@@ -81,6 +89,8 @@ describe("activity builders", () => {
       "phoneme-word-search.html",
       expect.stringContaining("<!DOCTYPE html>"),
     );
+    const html = vi.mocked(downloadTextFile).mock.calls[0][1] as string;
+    expect(html).toContain("bed");
     expect(generate).toBeEnabled();
   });
 });

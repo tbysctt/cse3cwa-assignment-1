@@ -67,7 +67,7 @@ export const WORDLE_TARGET: PhonemeWord = HCE_WORDS_3.find(
 )!;
 
 /**
- * Assessment 1: fixed five-word Word Search list drawn from the HCE corpus.
+ * Assessment 1: default five-word Word Search picks from the HCE corpus.
  */
 export const WORD_SEARCH_WORDS: PhonemeWord[] = [
   findCorpusWord("thin")!,

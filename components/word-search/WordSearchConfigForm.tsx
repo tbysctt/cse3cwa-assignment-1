@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  HCE_CORPUS,
   phonemeWordDisplay,
   type PhonemeWord,
 } from "@/data/phonemes";
@@ -14,14 +15,18 @@ const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export function WordSearchConfigForm({
+  wordIds,
   words,
+  onWordIdChange,
   difficulty,
   onDifficultyChange,
   canGenerate,
   generateHint,
   onGenerate,
 }: {
+  wordIds: string[];
   words: PhonemeWord[];
+  onWordIdChange: (index: number, nextId: string) => void;
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
   canGenerate: boolean;
@@ -34,28 +39,62 @@ export function WordSearchConfigForm({
   return (
     <SectionCard
       title="Configure activity"
-      description="The activity uses a fixed five-word phoneme list. Choose a difficulty to set the grid size and hints."
+      description="Pick five different HCE corpus words and a difficulty. The live preview regenerates as you change the list."
     >
       <div className="flex flex-col gap-5">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Word list</h3>
+        <fieldset>
+          <legend className="text-sm font-semibold text-foreground">
+            Corpus words
+          </legend>
           <p className="mt-0.5 text-xs text-absent">
-            Fixed Assessment 1 list of five phoneme words.
+            Choose five words from the HCE list. Each word can only be used once.
           </p>
-          <ul className="mt-3 space-y-2" aria-label="Fixed word search list">
-            {words.map((word) => (
-              <li
-                key={word.id}
-                className="rounded-[var(--control-radius)] border border-border bg-surface-muted px-3 py-2 text-sm"
-              >
-                <p className="font-mono text-foreground">
-                  {phonemeWordDisplay(word)}
-                </p>
-                <p className="mt-0.5 text-xs text-absent">{word.english}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <ol className="mt-3 space-y-3" aria-label="Word search corpus picks">
+            {wordIds.map((wordId, index) => {
+              const selected =
+                words.find((word) => word.id === wordId) ??
+                HCE_CORPUS.find((word) => word.id === wordId);
+              const takenElsewhere = new Set(
+                wordIds.filter((_, i) => i !== index),
+              );
+              return (
+                <li key={`slot-${index}`} className="space-y-1.5">
+                  <label
+                    className="block text-xs font-medium uppercase tracking-wide text-absent"
+                    htmlFor={`word-search-slot-${index}`}
+                  >
+                    Word {index + 1}
+                  </label>
+                  <select
+                    id={`word-search-slot-${index}`}
+                    className={inputClass}
+                    value={wordId}
+                    onChange={(event) =>
+                      onWordIdChange(index, event.target.value)
+                    }
+                  >
+                    {HCE_CORPUS.map((entry) => (
+                      <option
+                        key={entry.id}
+                        value={entry.id}
+                        disabled={
+                          takenElsewhere.has(entry.id) && entry.id !== wordId
+                        }
+                      >
+                        {entry.english} ({entry.phonemes.length} phonemes)
+                      </option>
+                    ))}
+                  </select>
+                  {selected ? (
+                    <p className="font-mono text-sm text-foreground">
+                      {phonemeWordDisplay(selected)}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        </fieldset>
 
         <Field
           label="Difficulty"

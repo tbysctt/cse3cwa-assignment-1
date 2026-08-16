@@ -4,7 +4,11 @@ import { useMemo, useState } from "react";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { WordSearchActivityPreview } from "@/components/word-search/WordSearchActivityPreview";
 import { WordSearchConfigForm } from "@/components/word-search/WordSearchConfigForm";
-import { WORD_SEARCH_WORDS } from "@/data/phonemes";
+import {
+  findCorpusWord,
+  WORD_SEARCH_WORDS,
+  type PhonemeWord,
+} from "@/data/phonemes";
 import { downloadTextFile } from "@/lib/download";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
 import {
@@ -16,20 +20,40 @@ import {
   DEFAULT_WORD_SEARCH_SEED,
   generateWordSearch,
   GRID_SIZE_BY_DIFFICULTY,
+  REQUIRED_WORD_COUNT,
   type WordSearchPuzzle,
 } from "@/lib/word-search";
 
 export function WordSearchBuilder() {
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const words = WORD_SEARCH_WORDS;
+  const [wordIds, setWordIds] = useState<string[]>(() =>
+    WORD_SEARCH_WORDS.map((word) => word.id),
+  );
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
   const showHints = DIFFICULTY_PRESETS[difficulty].showHints;
+
+  const words = useMemo<PhonemeWord[]>(() => {
+    return wordIds.flatMap((id) => {
+      const match = findCorpusWord(id);
+      return match ? [match] : [];
+    });
+  }, [wordIds]);
+
   const wordsSignature = useMemo(() => activitySignature(words), [words]);
 
   const puzzleResult = useMemo<{
     puzzle: WordSearchPuzzle | null;
     error: string | null;
   }>(() => {
+    if (words.length !== REQUIRED_WORD_COUNT) {
+      return { puzzle: null, error: null };
+    }
+    if (new Set(words.map((word) => word.id)).size !== REQUIRED_WORD_COUNT) {
+      return {
+        puzzle: null,
+        error: "Choose five different corpus words.",
+      };
+    }
     try {
       return {
         puzzle: generateWordSearch(
@@ -52,6 +76,10 @@ export function WordSearchBuilder() {
   const { puzzle } = puzzleResult;
   const canGenerate = puzzle !== null;
 
+  function handleWordIdChange(index: number, nextId: string) {
+    setWordIds((prev) => prev.map((id, i) => (i === index ? nextId : id)));
+  }
+
   function handleGenerate() {
     if (!puzzle || !canGenerate) return;
     const html = generateWordSearchHtml({
@@ -68,14 +96,17 @@ export function WordSearchBuilder() {
     <BuilderLayout
       config={
         <WordSearchConfigForm
+          wordIds={wordIds}
           words={words}
+          onWordIdChange={handleWordIdChange}
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
           canGenerate={canGenerate}
           generateHint={
             canGenerate
               ? "Download the word search as a standalone HTML file"
-              : "The word search could not be generated for this difficulty"
+              : puzzleResult.error ??
+                "Choose five different corpus words that fit the grid"
           }
           onGenerate={handleGenerate}
         />

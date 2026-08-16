@@ -1,4 +1,5 @@
 import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type { Difficulty } from "@/lib/activity";
 
 export type TileStatus = "correct" | "present" | "absent";
 
@@ -34,7 +35,7 @@ export function evaluateGuess(
 }
 
 export function isWinningGuess(result: GuessResult): boolean {
-  return result.every((status) => status === "correct");
+  return result.length > 0 && result.every((status) => status === "correct");
 }
 
 export const DEFAULT_MAX_ATTEMPTS = 6;
@@ -45,14 +46,6 @@ export function clampMaxAttempts(value: number): number {
   if (Number.isNaN(value)) return DEFAULT_MAX_ATTEMPTS;
   return Math.min(MAX_MAX_ATTEMPTS, Math.max(MIN_MAX_ATTEMPTS, Math.floor(value)));
 }
-
-export type Difficulty = "easy" | "medium" | "hard";
-
-export const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
-];
 
 /** Modest Assessment 1 behavioural differences: difficulty presets hints/guesses. */
 export const DIFFICULTY_PRESETS: Record<

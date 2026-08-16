@@ -4,45 +4,49 @@ import { useMemo, useState } from "react";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { WordleActivityPreview } from "@/components/wordle/WordleActivityPreview";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
-import { PHONEME_INVENTORY, WORDLE_TARGET, type Phoneme } from "@/data/phonemes";
+import {
+  HCE_PHONEME_INVENTORY,
+  WORDLE_TARGET,
+  type PhonemeLength,
+  type PhonemeWord,
+  wordsForLength,
+} from "@/data/phonemes";
+import { type Difficulty } from "@/lib/activity";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
-import { DEFAULT_MAX_ATTEMPTS, type Difficulty } from "@/lib/wordle";
+import { DIFFICULTY_PRESETS } from "@/lib/wordle";
 import { downloadTextFile } from "@/lib/download";
 
 export function WordleBuilder() {
-  const [target, setTarget] = useState<Phoneme[]>(WORDLE_TARGET.phonemes);
-  const [english, setEnglish] = useState(WORDLE_TARGET.english);
-  const [showHints, setShowHints] = useState(true);
-  const [maxAttempts, setMaxAttempts] = useState(DEFAULT_MAX_ATTEMPTS);
+  const [length, setLength] = useState<PhonemeLength>(
+    WORDLE_TARGET.phonemes.length as PhonemeLength,
+  );
+  const [wordId, setWordId] = useState(WORDLE_TARGET.id);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
-  const inventory = useMemo(() => {
-    const map = new Map<string, Phoneme>();
-    for (const p of [...PHONEME_INVENTORY, ...target]) {
-      map.set(p.ipa, p);
-    }
-    return [...map.values()];
-  }, [target]);
+  const lengthWords = useMemo(() => wordsForLength(length), [length]);
 
-  const targetWord = useMemo(
-    () => ({
-      id: "custom",
-      english: english.trim() || "thin",
-      phonemes: target,
-    }),
-    [target, english],
-  );
+  const targetWord = useMemo<PhonemeWord>(() => {
+    return lengthWords.find((entry) => entry.id === wordId) ?? lengthWords[0];
+  }, [lengthWords, wordId]);
 
-  const canGenerate = target.length > 0 && english.trim().length > 0;
+  const inventory = HCE_PHONEME_INVENTORY;
+  const preset = DIFFICULTY_PRESETS[difficulty];
+  const canGenerate = Boolean(targetWord);
+
+  function handleLengthChange(next: PhonemeLength) {
+    setLength(next);
+    const nextWords = wordsForLength(next);
+    setWordId(nextWords[0]?.id ?? "");
+  }
 
   function handleGenerate() {
     if (!canGenerate) return;
     const html = generateWordleHtml({
       target: targetWord,
       inventory,
-      maxAttempts,
+      maxAttempts: preset.maxAttempts,
       difficulty,
-      showHints,
+      showHints: preset.showHints,
     });
     downloadTextFile("phoneme-wordle.html", html);
   }
@@ -51,17 +55,13 @@ export function WordleBuilder() {
     <BuilderLayout
       config={
         <WordleConfigForm
-          target={target}
-          onTargetChange={setTarget}
-          english={english}
-          onEnglishChange={setEnglish}
-          showHints={showHints}
-          onShowHintsChange={setShowHints}
-          maxAttempts={maxAttempts}
-          onMaxAttemptsChange={setMaxAttempts}
+          length={length}
+          onLengthChange={handleLengthChange}
+          wordId={targetWord.id}
+          onWordIdChange={setWordId}
+          lengthWords={lengthWords}
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
-          inventory={inventory}
           canGenerate={canGenerate}
           onGenerate={handleGenerate}
         />
@@ -70,8 +70,8 @@ export function WordleBuilder() {
         <WordleActivityPreview
           target={targetWord}
           inventory={inventory}
-          maxAttempts={maxAttempts}
-          showHints={showHints}
+          maxAttempts={preset.maxAttempts}
+          showHints={preset.showHints}
         />
       }
     />

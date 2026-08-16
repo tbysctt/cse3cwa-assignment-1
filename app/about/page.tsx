@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { student } from "@/lib/student";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About",
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-[var(--section-gap)]">
+    <div className="mx-auto flex max-w-3xl flex-col gap-(--section-gap)">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">About</h1>
         <p className="mt-2 text-absent">
@@ -36,18 +36,18 @@ export default function AboutPage() {
         <article className="ui-surface p-5">
           <h2 className="text-lg font-semibold">Phoneme Wordle tool</h2>
           <p className="mt-2 text-sm leading-relaxed text-absent">
-            Builds a Wordle-style activity from a phoneme word and its English
-            equivalent. Players guess IPA sequences; feedback uses colour and
-            pattern, and hover hints map symbols such as /θ/ to letter patterns
-            like TH (as in thin).
+            Builds a Wordle-style activity from the HCE phoneme corpus. Teachers
+            choose a 3-, 4-, or 5-phoneme word; players guess IPA sequences with
+            colour and pattern feedback, and hover hints map symbols such as /θ/
+            to letter patterns like TH (as in thin).
           </p>
         </article>
         <article className="ui-surface p-5">
           <h2 className="text-lg font-semibold">Phoneme Word Search tool</h2>
           <p className="mt-2 text-sm leading-relaxed text-absent">
-            Generates a word search from a small editable list of phoneme-based
-            words. Learners select matching sequences in the grid and reveal the
-            English spelling of each word once found.
+            Generates a word search from five HCE corpus words chosen by the
+            teacher. Learners select matching sequences in the grid and reveal
+            the English spelling of each word once found.
           </p>
         </article>
       </section>
@@ -61,7 +61,7 @@ export default function AboutPage() {
           </code>{" "}
           or replace this element with a video embed.
         </p>
-        <div className="mt-4 aspect-video overflow-hidden rounded-[var(--control-radius)] border border-border bg-surface-muted">
+        <div className="mt-4 aspect-video overflow-hidden rounded-(--control-radius) border border-border bg-surface-muted">
           <video
             className="h-full w-full"
             controls
@@ -76,8 +76,9 @@ export default function AboutPage() {
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
           <li>Open Wordle or Word Search from the navigation bar.</li>
           <li>
-            Configure the phoneme word(s), English answers, hints, difficulty
-            and guess count.
+            For Wordle, choose a phoneme length, an HCE corpus word, and a
+            difficulty. For Word Search, pick five corpus words and a
+            difficulty.
           </li>
           <li>Try the live preview exactly as a student would play it.</li>
           <li>

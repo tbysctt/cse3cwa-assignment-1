@@ -10,9 +10,11 @@ export type WordleRowView = {
 export function WordleRow({
   row,
   columns,
+  showHint,
 }: {
   row: WordleRowView;
   columns: string;
+  showHint: boolean;
 }) {
   return (
     <div role="row" className="grid gap-2" style={{ gridTemplateColumns: columns }}>
@@ -21,6 +23,7 @@ export function WordleRow({
           key={`${index}-${phoneme?.ipa ?? "empty"}`}
           phoneme={phoneme}
           status={row.statuses[index]}
+          showHint={showHint}
         />
       ))}
     </div>

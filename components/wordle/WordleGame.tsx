@@ -11,6 +11,13 @@ import {
 import { PhonemeKeyboard } from "./PhonemeKeyboard";
 import { WordleGrid, type SubmittedWordleRow } from "./WordleGrid";
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
 export function WordleGame({
   target,
   inventory,
@@ -75,6 +82,7 @@ export function WordleGame({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      if (isEditableTarget(event.target)) return;
       if (event.key === "Enter") {
         event.preventDefault();
         submitGuess();
@@ -107,13 +115,14 @@ export function WordleGame({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+      <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:items-start">
         <div className="min-w-0">
           <WordleGrid
             maxAttempts={maxAttempts}
             length={length}
             submitted={submitted}
             current={current}
+            showHint={showHints}
           />
         </div>
 

@@ -4,96 +4,88 @@ import { useMemo, useState } from "react";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { WordSearchActivityPreview } from "@/components/word-search/WordSearchActivityPreview";
 import { WordSearchConfigForm } from "@/components/word-search/WordSearchConfigForm";
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
 import {
-  PHONEME_INVENTORY,
+  findCorpusWord,
   WORD_SEARCH_WORDS,
+  type PhonemeWord,
 } from "@/data/phonemes";
 import { downloadTextFile } from "@/lib/download";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
-import type { Difficulty } from "@/lib/wordle";
-import { generateWordSearch, type WordSearchPuzzle } from "@/lib/word-search";
-import type { WordSearchRow } from "./PhonemeWordListEditor";
-
-const SEED = 42;
-const REQUIRED_WORD_COUNT = 5;
-const GRID_SIZE_BY_DIFFICULTY: Record<Difficulty, number> = {
-  easy: 8,
-  medium: 9,
-  hard: 10,
-};
+import {
+  activitySignature,
+  type Difficulty,
+} from "@/lib/activity";
+import { DIFFICULTY_PRESETS } from "@/lib/wordle";
+import {
+  DEFAULT_WORD_SEARCH_SEED,
+  generateWordSearch,
+  GRID_SIZE_BY_DIFFICULTY,
+  REQUIRED_WORD_COUNT,
+  type WordSearchPuzzle,
+} from "@/lib/word-search";
 
 export function WordSearchBuilder() {
-  const [rows, setRows] = useState<WordSearchRow[]>(() =>
-    WORD_SEARCH_WORDS.map((word) => ({
-      id: word.id,
-      english: word.english,
-      phonemes: word.phonemes,
-    })),
-  );
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [showHints, setShowHints] = useState(true);
+  const [wordIds, setWordIds] = useState<string[]>(() =>
+    WORD_SEARCH_WORDS.map((word) => word.id),
+  );
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
+  const showHints = DIFFICULTY_PRESETS[difficulty].showHints;
 
-  const inventory = useMemo(() => {
-    const map = new Map<string, Phoneme>();
-    for (const p of PHONEME_INVENTORY) map.set(p.ipa, p);
-    for (const row of rows) {
-      for (const p of row.phonemes) map.set(p.ipa, p);
+  const words = useMemo<PhonemeWord[]>(() => {
+    return wordIds.flatMap((id) => {
+      const match = findCorpusWord(id);
+      return match ? [match] : [];
+    });
+  }, [wordIds]);
+
+  const wordsSignature = useMemo(() => activitySignature(words), [words]);
+
+  const puzzleResult = useMemo<{
+    puzzle: WordSearchPuzzle | null;
+    error: string | null;
+  }>(() => {
+    if (words.length !== REQUIRED_WORD_COUNT) {
+      return { puzzle: null, error: null };
     }
-    return [...map.values()];
-  }, [rows]);
-
-  const completeRows = useMemo(
-    () =>
-      rows.filter((row) => row.phonemes.length > 0 && row.english.trim().length > 0),
-    [rows],
-  );
-
-  const validWords = useMemo<PhonemeWord[]>(
-    () =>
-      completeRows
-        .map((row) => ({
-          id: row.id,
-          english: row.english.trim(),
-          phonemes: row.phonemes,
-        })),
-    [completeRows],
-  );
-
-  const wordsSignature = useMemo(
-    () =>
-      validWords
-        .map((w) => `${w.id}:${w.phonemes.map((p) => p.ipa).join("")}`)
-        .join("|"),
-    [validWords],
-  );
-
-  const puzzle = useMemo<WordSearchPuzzle | null>(() => {
-    if (validWords.length !== REQUIRED_WORD_COUNT) return null;
+    if (new Set(words.map((word) => word.id)).size !== REQUIRED_WORD_COUNT) {
+      return {
+        puzzle: null,
+        error: "Choose five different corpus words.",
+      };
+    }
     try {
-      return generateWordSearch(validWords, gridSize, SEED);
-    } catch {
-      return null;
+      return {
+        puzzle: generateWordSearch(
+          words,
+          gridSize,
+          DEFAULT_WORD_SEARCH_SEED,
+        ),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        puzzle: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "The word search could not be generated.",
+      };
     }
-  }, [validWords, gridSize]);
+  }, [words, gridSize]);
+  const { puzzle } = puzzleResult;
+  const canGenerate = puzzle !== null;
 
-  const canGenerate =
-    puzzle !== null && validWords.length === REQUIRED_WORD_COUNT;
-
-  const generateHint =
-    validWords.length !== REQUIRED_WORD_COUNT
-      ? `Configure all ${REQUIRED_WORD_COUNT} words with phonemes and English labels first`
-      : canGenerate
-        ? "Download the word search as a standalone HTML file"
-        : "Current words do not fit the selected grid size; shorten one or more words";
+  function handleWordIdChange(index: number, nextId: string) {
+    setWordIds((prev) => prev.map((id, i) => (i === index ? nextId : id)));
+  }
 
   function handleGenerate() {
     if (!puzzle || !canGenerate) return;
     const html = generateWordSearchHtml({
-      words: validWords,
+      words,
       puzzle,
-      seed: SEED,
+      seed: DEFAULT_WORD_SEARCH_SEED,
       difficulty,
       showHints,
     });
@@ -104,25 +96,28 @@ export function WordSearchBuilder() {
     <BuilderLayout
       config={
         <WordSearchConfigForm
-          rows={rows}
-          inventory={inventory}
-          showHints={showHints}
-          onShowHintsChange={setShowHints}
+          wordIds={wordIds}
+          words={words}
+          onWordIdChange={handleWordIdChange}
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
-          onRowsChange={setRows}
-          configuredCount={validWords.length}
           canGenerate={canGenerate}
-          generateHint={generateHint}
+          generateHint={
+            canGenerate
+              ? "Download the word search as a standalone HTML file"
+              : puzzleResult.error ??
+                "Choose five different corpus words that fit the grid"
+          }
           onGenerate={handleGenerate}
         />
       }
       preview={
         <WordSearchActivityPreview
           puzzle={puzzle}
-          words={validWords}
+          words={words}
           showHints={showHints}
           puzzleKey={`${wordsSignature}|${difficulty}|${gridSize}`}
+          errorMessage={puzzleResult.error}
         />
       }
     />

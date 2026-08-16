@@ -1,6 +1,8 @@
 "use client";
 
 import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import { ActivityPreviewShell } from "@/components/shared/ActivityPreviewShell";
+import { activitySignature } from "@/lib/activity";
 import { WordleGame } from "./WordleGame";
 
 /**
@@ -20,26 +22,20 @@ export function WordleActivityPreview({
   maxAttempts: number;
   showHints: boolean;
 }) {
-  const gameKey = `${target.phonemes.map((p) => p.ipa).join("")}|${maxAttempts}`;
+  const gameKey = `${activitySignature([target])}|${maxAttempts}`;
 
   return (
-    <section
-      aria-label="Activity preview"
-      className="ui-surface ui-surface-pad"
+    <ActivityPreviewShell
+      description={
+        <>
+          Play the current student activity.
+          {showHints
+            ? " Hover or focus a phoneme key for a hint."
+            : " Phoneme hints are currently switched off."}
+        </>
+      }
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Activity Preview</h2>
-        <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-accent">
-          Student view
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-absent">
-        This is exactly what students will see and play.
-        {showHints
-          ? " Hover or focus a phoneme key for a hint."
-          : " Phoneme hints are currently switched off."}
-      </p>
-      <div className="mt-5">
+      {target.phonemes.length > 0 && target.english.trim() ? (
         <WordleGame
           key={gameKey}
           target={target}
@@ -47,7 +43,11 @@ export function WordleActivityPreview({
           maxAttempts={maxAttempts}
           showHints={showHints}
         />
-      </div>
-    </section>
+      ) : (
+        <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+          Select a corpus word to preview the activity.
+        </p>
+      )}
+    </ActivityPreviewShell>
   );
 }

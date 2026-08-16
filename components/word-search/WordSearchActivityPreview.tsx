@@ -1,6 +1,7 @@
 "use client";
 
 import type { PhonemeWord } from "@/data/phonemes";
+import { ActivityPreviewShell } from "@/components/shared/ActivityPreviewShell";
 import type { WordSearchPuzzle } from "@/lib/word-search";
 import { WordSearchGame } from "./WordSearchGame";
 
@@ -9,43 +10,31 @@ export function WordSearchActivityPreview({
   words,
   showHints,
   puzzleKey,
+  errorMessage,
 }: {
   puzzle: WordSearchPuzzle | null;
   words: PhonemeWord[];
   showHints: boolean;
   puzzleKey: string;
+  errorMessage?: string | null;
 }) {
   return (
-    <section
-      aria-label="Activity preview"
-      className="ui-surface ui-surface-pad"
+    <ActivityPreviewShell
+      description="The grid is generated from your word list. Drag across a straight horizontal, vertical, or diagonal line of connected phonemes to find a word, or use the keyboard steps shown below."
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Activity Preview</h2>
-        <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-accent">
-          Student view
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-absent">
-        The grid is generated from your word list. Select connected phonemes
-        (click or drag) to find a word.
-      </p>
-
       {puzzle ? (
-        <div className="mt-5">
-          <WordSearchGame
-            key={puzzleKey}
-            puzzle={puzzle}
-            words={words}
-            showHints={showHints}
-          />
-        </div>
+        <WordSearchGame
+          key={puzzleKey}
+          puzzle={puzzle}
+          words={words}
+          showHints={showHints}
+        />
       ) : (
-        <p className="mt-5 rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-          Could not fit the current word list into the grid. Try shorter words
-          or fewer of them.
+        <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+          {errorMessage ??
+            "Configure all five words to generate the activity preview."}
         </p>
       )}
-    </section>
+    </ActivityPreviewShell>
   );
 }

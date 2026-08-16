@@ -1,6 +1,7 @@
 # CSE3CWA Assessment: Phoneme Activity Builder
 
 This is a three-part assignment:
+
 1. Frontend design and usability
 2. Full-stack cloud application implementation
 3. The third stage extends the same project into a data-driven web application and reporting stage. The aim is to demonstrate that the Wordle and Word Search builder can store, process, monitor, and present data in a meaningful operational format.
@@ -41,6 +42,7 @@ npm run build
 ## About page video
 
 Place your walkthrough at:
+
 - `public/howto.mp4`
 
 The About page will render it automatically in the embedded player.

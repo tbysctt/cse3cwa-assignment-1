@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
 import { setTheme } from "@/app/actions/theme";
 import type { Theme } from "@/lib/theme";
+import { useTransition } from "react";
 
 function OptionButton({
   label,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useLayoutEffect } from "react";
 import type { Theme } from "@/lib/theme";
+import { useLayoutEffect } from "react";
 
 function systemPrefersDark(): boolean {
   return (

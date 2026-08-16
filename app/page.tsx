@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { student } from "@/lib/student";
+import Link from "next/link";
 
 export default function HomePage() {
   return (

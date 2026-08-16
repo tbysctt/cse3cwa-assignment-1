@@ -1,7 +1,5 @@
 /**
- * Two-column layout used by the builder pages. On desktop the configuration
- * panel sits on the left and the live activity preview on the right; on small
- * screens everything stacks vertically (configuration first, preview second).
+ * Shared vertical layout for builder configuration and its live preview.
  */
 export function BuilderLayout({
   config,

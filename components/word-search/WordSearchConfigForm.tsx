@@ -1,91 +1,104 @@
 "use client";
 
-import type { Phoneme } from "@/data/phonemes";
-import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/wordle";
+import {
+  HCE_CORPUS,
+  phonemeWordDisplay,
+  type PhonemeWord,
+} from "@/data/phonemes";
+import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/activity";
+import { DIFFICULTY_PRESETS } from "@/lib/wordle";
+import { GRID_SIZE_BY_DIFFICULTY } from "@/lib/word-search";
 import { Field } from "@/components/shared/Field";
 import { SectionCard } from "@/components/shared/SectionCard";
-import {
-  PhonemeWordListEditor,
-  type WordSearchRow,
-} from "./PhonemeWordListEditor";
 
 const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export function WordSearchConfigForm({
-  rows,
-  inventory,
-  showHints,
-  onShowHintsChange,
+  wordIds,
+  words,
+  onWordIdChange,
   difficulty,
   onDifficultyChange,
-  onRowsChange,
-  configuredCount,
   canGenerate,
   generateHint,
   onGenerate,
 }: {
-  rows: WordSearchRow[];
-  inventory: Phoneme[];
-  showHints: boolean;
-  onShowHintsChange: (next: boolean) => void;
+  wordIds: string[];
+  words: PhonemeWord[];
+  onWordIdChange: (index: number, nextId: string) => void;
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
-  onRowsChange: (next: WordSearchRow[]) => void;
-  configuredCount: number;
   canGenerate: boolean;
   generateHint?: string;
   onGenerate: () => void;
 }) {
+  const preset = DIFFICULTY_PRESETS[difficulty];
+  const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
+
   return (
     <SectionCard
       title="Configure activity"
-      description="Edit the fixed five-word phoneme list, hints and difficulty. The grid preview regenerates as you edit."
+      description="Pick five different HCE corpus words and a difficulty. The live preview regenerates as you change the list."
     >
       <div className="flex flex-col gap-5">
-        <PhonemeWordListEditor
-          rows={rows}
-          inventory={inventory}
-          showHint={showHints}
-          onChange={onRowsChange}
-        />
-        <p className="text-xs text-absent">
-          Configured words: {configuredCount}/5
-        </p>
-
         <fieldset>
           <legend className="text-sm font-semibold text-foreground">
-            Show phoneme hints
+            Corpus words
           </legend>
           <p className="mt-0.5 text-xs text-absent">
-            When on, grid cells and word chips show tooltips such as /θ/ → TH
-            (as in thin).
+            Choose five words from the HCE list. Each word can only be used once.
           </p>
-          <div className="mt-2 flex gap-4" role="radiogroup" aria-label="Show phoneme hints">
-            {[
-              { value: true, label: "Yes" },
-              { value: false, label: "No" },
-            ].map((option) => (
-              <label
-                key={option.label}
-                className="flex cursor-pointer items-center gap-2 text-sm font-medium"
-              >
-                <input
-                  type="radio"
-                  name="word-search-show-hints"
-                  className="size-4 accent-[var(--accent)]"
-                  checked={showHints === option.value}
-                  onChange={() => onShowHintsChange(option.value)}
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
+          <ol className="mt-3 space-y-3" aria-label="Word search corpus picks">
+            {wordIds.map((wordId, index) => {
+              const selected =
+                words.find((word) => word.id === wordId) ??
+                HCE_CORPUS.find((word) => word.id === wordId);
+              const takenElsewhere = new Set(
+                wordIds.filter((_, i) => i !== index),
+              );
+              return (
+                <li key={`slot-${index}`} className="space-y-1.5">
+                  <label
+                    className="block text-xs font-medium uppercase tracking-wide text-absent"
+                    htmlFor={`word-search-slot-${index}`}
+                  >
+                    Word {index + 1}
+                  </label>
+                  <select
+                    id={`word-search-slot-${index}`}
+                    className={inputClass}
+                    value={wordId}
+                    onChange={(event) =>
+                      onWordIdChange(index, event.target.value)
+                    }
+                  >
+                    {HCE_CORPUS.map((entry) => (
+                      <option
+                        key={entry.id}
+                        value={entry.id}
+                        disabled={
+                          takenElsewhere.has(entry.id) && entry.id !== wordId
+                        }
+                      >
+                        {entry.english} ({entry.phonemes.length} phonemes)
+                      </option>
+                    ))}
+                  </select>
+                  {selected ? (
+                    <p className="font-mono text-sm text-foreground">
+                      {phonemeWordDisplay(selected)}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
         </fieldset>
 
         <Field
           label="Difficulty"
-          hint="Recorded in the downloaded activity settings."
+          hint={`Sets grid size and hints. Current: ${gridSize}×${gridSize} grid, hints ${preset.showHints ? "on" : "off"}.`}
         >
           {(id) => (
             <select

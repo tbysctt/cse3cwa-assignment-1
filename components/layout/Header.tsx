@@ -1,16 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
 import { student } from "@/lib/student";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useId, useRef, useState } from "react";
 import { MobileMenu } from "./MobileMenu";
-import { allNavLinks } from "./nav-links";
+import { allNavLinks, isActiveLink, linkClass } from "./nav-links";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!open) return;
@@ -43,16 +45,8 @@ export function Header() {
 
   return (
     <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <div className="min-w-0">
-          <Link
-            href="/"
-            className="block truncate text-lg font-semibold text-foreground sm:text-xl"
-          >
-            {student.assessmentTitle}
-          </Link>
-        </div>
-
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <h1 className="block truncate text-xl font-semibold text-foreground sm:text-xl">{student.assessmentTitle}</h1>
         <div className="relative md:hidden">
           <button
             ref={buttonRef}
@@ -86,6 +80,27 @@ export function Header() {
           ) : null}
         </div>
       </div>
+      <nav
+        aria-label="Primary"
+        className="hidden border-b border-border bg-surface md:block"
+      >
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2 sm:px-6">
+          {allNavLinks.map((link) => {
+            const active = isActiveLink(link.href, pathname);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={linkClass(active)}
+                aria-current={active ? "page" : undefined}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
     </header>
   );
 }

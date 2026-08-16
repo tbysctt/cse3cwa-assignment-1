@@ -13,7 +13,7 @@ import {
 } from "@/data/phonemes";
 import { type Difficulty } from "@/lib/activity";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
-import { DEFAULT_MAX_ATTEMPTS } from "@/lib/wordle";
+import { DIFFICULTY_PRESETS } from "@/lib/wordle";
 import { downloadTextFile } from "@/lib/download";
 
 export function WordleBuilder() {
@@ -21,8 +21,6 @@ export function WordleBuilder() {
     WORDLE_TARGET.phonemes.length as PhonemeLength,
   );
   const [wordId, setWordId] = useState(WORDLE_TARGET.id);
-  const [showHints, setShowHints] = useState(true);
-  const [maxAttempts, setMaxAttempts] = useState(DEFAULT_MAX_ATTEMPTS);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
   const lengthWords = useMemo(() => wordsForLength(length), [length]);
@@ -32,7 +30,7 @@ export function WordleBuilder() {
   }, [lengthWords, wordId]);
 
   const inventory = HCE_PHONEME_INVENTORY;
-
+  const preset = DIFFICULTY_PRESETS[difficulty];
   const canGenerate = Boolean(targetWord);
 
   function handleLengthChange(next: PhonemeLength) {
@@ -46,9 +44,9 @@ export function WordleBuilder() {
     const html = generateWordleHtml({
       target: targetWord,
       inventory,
-      maxAttempts,
+      maxAttempts: preset.maxAttempts,
       difficulty,
-      showHints,
+      showHints: preset.showHints,
     });
     downloadTextFile("phoneme-wordle.html", html);
   }
@@ -62,10 +60,6 @@ export function WordleBuilder() {
           wordId={targetWord.id}
           onWordIdChange={setWordId}
           lengthWords={lengthWords}
-          showHints={showHints}
-          onShowHintsChange={setShowHints}
-          maxAttempts={maxAttempts}
-          onMaxAttemptsChange={setMaxAttempts}
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
           canGenerate={canGenerate}
@@ -76,8 +70,8 @@ export function WordleBuilder() {
         <WordleActivityPreview
           target={targetWord}
           inventory={inventory}
-          maxAttempts={maxAttempts}
-          showHints={showHints}
+          maxAttempts={preset.maxAttempts}
+          showHints={preset.showHints}
         />
       }
     />

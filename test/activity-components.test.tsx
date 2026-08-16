@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { PhonemePicker } from "@/components/phoneme/PhonemePicker";
 import { WordSearchGame } from "@/components/word-search/WordSearchGame";
 import { PhonemeKeyboard } from "@/components/wordle/PhonemeKeyboard";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
@@ -18,50 +17,6 @@ import {
   generateWordSearch,
   INVALID_SELECTION_FLASH_MS,
 } from "@/lib/word-search";
-
-describe("PhonemePicker", () => {
-  it("adds, removes, backspaces, clears, and honours its limit", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    const theta = PHONEME_INVENTORY.find((phoneme) => phoneme.ipa === "θ")!;
-    const kit = PHONEME_INVENTORY.find((phoneme) => phoneme.ipa === "ɪ")!;
-    const inventory = [theta, kit];
-    const { rerender } = render(
-      <PhonemePicker
-        label="Target"
-        phonemes={[]}
-        inventory={inventory}
-        onChange={onChange}
-        max={1}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /\/θ\// }));
-    expect(onChange).toHaveBeenLastCalledWith([theta]);
-
-    rerender(
-      <PhonemePicker
-        label="Target"
-        phonemes={[theta]}
-        inventory={inventory}
-        onChange={onChange}
-        max={1}
-      />,
-    );
-    expect(
-      screen.getByRole("group", { name: /add phonemes/i }).querySelectorAll(
-        "button:disabled",
-      ),
-    ).toHaveLength(2);
-
-    await user.click(screen.getByRole("button", { name: "Backspace" }));
-    expect(onChange).toHaveBeenLastCalledWith([]);
-    await user.click(screen.getByRole("button", { name: /remove \/θ\//i }));
-    expect(onChange).toHaveBeenLastCalledWith([]);
-    await user.click(screen.getByRole("button", { name: "Clear" }));
-    expect(onChange).toHaveBeenLastCalledWith([]);
-  });
-});
 
 describe("PhonemeKeyboard", () => {
   it("renders the fixed HCE row order including blank slots", () => {
@@ -195,11 +150,9 @@ describe("Wordle components", () => {
     expect(note).toHaveValue("ab");
   });
 
-  it("applies difficulty presets and clamps attempt drafts", async () => {
+  it("applies difficulty selection and shows preset summary", async () => {
     const user = userEvent.setup();
     const onDifficultyChange = vi.fn();
-    const onMaxAttemptsChange = vi.fn();
-    const onShowHintsChange = vi.fn();
     const onLengthChange = vi.fn();
     const onWordIdChange = vi.fn();
     render(
@@ -209,10 +162,6 @@ describe("Wordle components", () => {
         wordId="thin"
         onWordIdChange={onWordIdChange}
         lengthWords={wordsForLength(3)}
-        showHints
-        onShowHintsChange={onShowHintsChange}
-        maxAttempts={6}
-        onMaxAttemptsChange={onMaxAttemptsChange}
         difficulty="medium"
         onDifficultyChange={onDifficultyChange}
         canGenerate
@@ -221,6 +170,10 @@ describe("Wordle components", () => {
     );
 
     expect(screen.getByText(/\/θ\/ \/ɪ\/ \/n\//)).toBeInTheDocument();
+    expect(screen.getByText(/6 guesses, hints on/i)).toBeInTheDocument();
+    expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Show phoneme hints/i)).not.toBeInTheDocument();
+
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Corpus word" }),
       "ship",
@@ -238,16 +191,6 @@ describe("Wordle components", () => {
       "hard",
     );
     expect(onDifficultyChange).toHaveBeenCalledWith("hard");
-    expect(onMaxAttemptsChange).toHaveBeenCalledWith(5);
-    expect(onShowHintsChange).toHaveBeenCalledWith(false);
-
-    const attempts = screen.getByRole("spinbutton", {
-      name: "Number of guesses",
-    });
-    await user.clear(attempts);
-    await user.type(attempts, "99");
-    await user.tab();
-    expect(onMaxAttemptsChange).toHaveBeenLastCalledWith(10);
   });
 });
 

@@ -45,8 +45,8 @@ export default function AboutPage() {
         <article className="ui-surface p-5">
           <h2 className="text-lg font-semibold">Phoneme Word Search tool</h2>
           <p className="mt-2 text-sm leading-relaxed text-absent">
-            Generates a word search from a small editable list of phoneme-based
-            words. Learners select matching sequences in the grid and reveal the
+            Generates a word search from a fixed five-word phoneme list.
+            Learners select matching sequences in the grid and reveal the
             English spelling of each word once found.
           </p>
         </article>
@@ -76,8 +76,9 @@ export default function AboutPage() {
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
           <li>Open Wordle or Word Search from the navigation bar.</li>
           <li>
-            For Wordle, choose a phoneme length and an HCE corpus word; for Word
-            Search, edit the word list. Adjust hints, difficulty and guess count.
+            For Wordle, choose a phoneme length, an HCE corpus word, and a
+            difficulty. For Word Search, choose a difficulty for the fixed
+            five-word list.
           </li>
           <li>Try the live preview exactly as a student would play it.</li>
           <li>

@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { Field } from "@/components/shared/Field";
-import { HintToggle } from "@/components/shared/HintToggle";
 import { SectionCard } from "@/components/shared/SectionCard";
 import {
   phonemeWordDisplay,
@@ -14,10 +12,7 @@ import {
   DIFFICULTY_OPTIONS,
   type Difficulty,
 } from "@/lib/activity";
-import {
-  clampMaxAttempts,
-  DIFFICULTY_PRESETS,
-} from "@/lib/wordle";
+import { DIFFICULTY_PRESETS } from "@/lib/wordle";
 
 const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
@@ -28,10 +23,6 @@ export function WordleConfigForm({
   wordId,
   onWordIdChange,
   lengthWords,
-  showHints,
-  onShowHintsChange,
-  maxAttempts,
-  onMaxAttemptsChange,
   difficulty,
   onDifficultyChange,
   canGenerate,
@@ -42,43 +33,18 @@ export function WordleConfigForm({
   wordId: string;
   onWordIdChange: (next: string) => void;
   lengthWords: PhonemeWord[];
-  showHints: boolean;
-  onShowHintsChange: (next: boolean) => void;
-  maxAttempts: number;
-  onMaxAttemptsChange: (next: number) => void;
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
   canGenerate: boolean;
   onGenerate: () => void;
 }) {
-  const [attemptsDraft, setAttemptsDraft] = useState(String(maxAttempts));
-  const [previousMaxAttempts, setPreviousMaxAttempts] = useState(maxAttempts);
-
-  if (previousMaxAttempts !== maxAttempts) {
-    setPreviousMaxAttempts(maxAttempts);
-    setAttemptsDraft(String(maxAttempts));
-  }
-
   const selected = lengthWords.find((entry) => entry.id === wordId) ?? lengthWords[0];
-
-  function commitAttempts() {
-    const parsed = Number.parseInt(attemptsDraft, 10);
-    const clamped = clampMaxAttempts(parsed);
-    onMaxAttemptsChange(clamped);
-    setAttemptsDraft(String(clamped));
-  }
-
-  function changeDifficulty(next: Difficulty) {
-    onDifficultyChange(next);
-    const preset = DIFFICULTY_PRESETS[next];
-    onMaxAttemptsChange(preset.maxAttempts);
-    onShowHintsChange(preset.showHints);
-  }
+  const preset = DIFFICULTY_PRESETS[difficulty];
 
   return (
     <SectionCard
       title="Configure activity"
-      description="Choose a phoneme length and an HCE corpus word. The live preview updates as you go."
+      description="Choose a phoneme length, an HCE corpus word, and a difficulty. The live preview updates as you go."
     >
       <div className="flex flex-col gap-5">
         <div className="grid gap-5 sm:grid-cols-2">
@@ -136,55 +102,27 @@ export function WordleConfigForm({
           </div>
         ) : null}
 
-        <HintToggle
-          value={showHints}
-          onChange={onShowHintsChange}
-          name="show-hints"
-          description="When on, phoneme buttons show tooltips such as /θ/ → TH (as in thin) on hover or keyboard focus."
-        />
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            label="Number of guesses"
-            hint="Rows in the Wordle grid. Values below 1 are prevented."
-          >
-            {(id) => (
-              <input
-                id={id}
-                className={inputClass}
-                type="number"
-                min={1}
-                max={10}
-                step={1}
-                value={attemptsDraft}
-                onChange={(event) => setAttemptsDraft(event.target.value)}
-                onBlur={commitAttempts}
-              />
-            )}
-          </Field>
-
-          <Field
-            label="Difficulty"
-            hint="Presets hints and guess count. Both stay adjustable afterwards."
-          >
-            {(id) => (
-              <select
-                id={id}
-                className={inputClass}
-                value={difficulty}
-                onChange={(event) =>
-                  changeDifficulty(event.target.value as Difficulty)
-                }
-              >
-                {DIFFICULTY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-        </div>
+        <Field
+          label="Difficulty"
+          hint={`Sets guess count and hints. Current: ${preset.maxAttempts} guesses, hints ${preset.showHints ? "on" : "off"}.`}
+        >
+          {(id) => (
+            <select
+              id={id}
+              className={inputClass}
+              value={difficulty}
+              onChange={(event) =>
+                onDifficultyChange(event.target.value as Difficulty)
+              }
+            >
+              {DIFFICULTY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
 
         <div className="border-t border-border pt-4">
           <button
